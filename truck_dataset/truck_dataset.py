@@ -798,7 +798,6 @@ assert_frame_equal(
     truck_failure_10k[observed_variables].reset_index(drop=True),
 )
 # %%
-
 truck_failure_100k[observed_variables].to_parquet(
     "truck_failure_100k_features.parquet", index=False
 )
@@ -821,6 +820,7 @@ truck_failure_100k_any_event.to_parquet(
 # events, called Aalen-Johanson, gives hazards estimations close to the ground
 # truth.
 
+# %%
 for seed in [40, 41, 42]:
     truck_failure_fc = sample_driver_truck_pairs_with_metadata(1, random_seed=seed)
     truck_failure_fc = pd.concat([truck_failure_fc] * 300, axis="rows").reset_index(

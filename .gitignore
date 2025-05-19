@@ -172,3 +172,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Generated data
+truck_dataset/*.parquet
+truck_dataset/*.npz
+

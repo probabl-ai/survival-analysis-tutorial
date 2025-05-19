@@ -393,9 +393,10 @@ _ = plt.legend()
 # Now that we have the event hazards for the entire period of observation, we
 # can sample the failure for all (driver, truck) pairs and define our target.
 #
-# Our target `y` is comprised of two columns: %% [markdown] `event`: 1, 2, 3 or
-# 0 if no event occured during the period or if the observation was censored %%
-# [markdown] `duration`: the day when the event or censor was observed
+# Our target `y` is comprised of two columns:
+# - `event`: 1, 2, 3 or 0 if no event occurred during the period or if the
+# observation was censored;
+# - `duration`: the day when the event or censor was observed.
 
 # %%
 from scipy.stats import bernoulli

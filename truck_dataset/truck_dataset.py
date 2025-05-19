@@ -197,10 +197,14 @@ sample_driver_truck_pairs_with_metadata(10, random_seed=0)
 
 # ## Types of Failures
 #
-# We assume all types of failures follow a [Weibull distribution](https://en.wikipedia.org/wiki/Weibull_distribution) with varying shape parameters $k$:
+# We assume all types of failures follow a [Weibull
+# distribution](https://en.wikipedia.org/wiki/Weibull_distribution) with
+# varying shape parameters $k$:
 #
-# - k < 1: is good to model manufacturing defects, "infant mortality" and similar, monotonically decreasing hazards;
-# - k = 1: constant hazards (exponential distribution): random events not related to time (e.g. driving accidents);
+# - k < 1: is good to model manufacturing defects, "infant mortality" and
+#   similar, monotonically decreasing hazards;
+# - k = 1: constant hazards (exponential distribution): random events not
+#   related to time (e.g. driving accidents);
 # - k > 1: "aging" process, wear and tear... monotonically increasing hazards.
 #
 # The hazard function can be implemented as:
@@ -255,9 +259,9 @@ hazards_1 = assembly_hazards(subsampled_df, t)
 for idx, h1 in enumerate(hazards_1):
     ax.plot(t, h1, label=f"Pair #{idx}")
 ax.set(
-    title="$\lambda_1$ hazard for some (driver, truck) pairs",
+    title=r"$\lambda_1$ hazard for some (driver, truck) pairs",
     xlabel="time (days)",
-    ylabel="$\lambda_1$",
+    ylabel=r"$\lambda_1$",
 )
 plt.legend()
 subsampled_df
@@ -340,12 +344,11 @@ def fatigue_hazards(df, t):
 
 
 hazards_3 = fatigue_hazards(df, t)
-# %% [markdown]
-
+# %%
 fig, ax = plt.subplots()
 for h_3_ in hazards_3[:5]:
     ax.plot(t, h_3_)
-ax.set(title="$\lambda_3$ hazard", xlabel="time (days)")
+ax.set(title=r"$\lambda_3$ hazard", xlabel="time (days)")
 
 fig, ax = plt.subplots()
 for model in models:
@@ -353,7 +356,7 @@ for model in models:
     hazards_mean = hazards_3[mask_model].mean(axis=0)
     ax.plot(t, hazards_mean, label=model)
 ax.set(
-    title="Average $\lambda_3(t)$",
+    title=r"Average $\lambda_3(t)$",
     xlabel="time (days)",
 )
 _ = plt.legend()

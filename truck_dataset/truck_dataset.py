@@ -209,7 +209,7 @@ sample_driver_truck_pairs_with_metadata(10, random_seed=0)
 #
 # The hazard function can be implemented as:
 
-
+# %%
 def weibull_hazard(t, k=1.0, s=1.0, t_shift=100, base_rate=1e2):
     # See: https://en.wikipedia.org/wiki/Weibull_distribution
     # t_shift is a trick to avoid avoid negative powers at t=0 when k < 1.
@@ -417,9 +417,11 @@ def sample_events_by_type(hazards, random_state=None):
 
 
 # %% [markdown]
+#
+# Let's count the number of events of each type that would occur if event types
+# were non-competing:
 
-# Let's count the number of events of each type that would occur if event types were non-competing:
-
+# %%
 rng = check_random_state(0)
 occurrences_1 = sample_events_by_type(hazards_1, random_state=rng)
 print(

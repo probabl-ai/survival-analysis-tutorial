@@ -1,0 +1,11 @@
+[project]
+name = "survival-analysis-online-talk"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "hazardous[doc]>=0.1.0",
+    "jupyterlab>=4.4.2",
+    "jupytext>=1.17.1",
+]

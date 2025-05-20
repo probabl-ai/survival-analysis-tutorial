@@ -556,6 +556,10 @@ PartialDependenceDisplay.from_estimator(
     feature_names=X_test_trans.columns,
 )
 
+# from sklearn.inspection import PartialDependenceDisplay
+
+# PartialDependenceDisplay.from_estimator(surv_boost, X_test_trans, feature_names=)
+
 # %%
 plot_survival_curves(y_pred_survboost, time_grid)
 # %% [markdown]

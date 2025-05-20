@@ -139,26 +139,34 @@ y.round(1)
 # **Both approaches are wrong and lead to biased results.**
 #
 # Let's compute the average and median time to event using either of those naive
-# approaches on our truck failure dataset. We will compare them to the mean of the
-# ground-truth event time $T$, that we would obtained with an infinite observation
-# window. 
-#
-# Note that we have access to the random variable $T$ because we generated this
-# synthetic dataset. With real-world data, you only have access to $Y = \min(T, C)$,
-# where $C$ is a random variable representing the censoring time.
+# approaches on our truck failure dataset:
 
 # %%
-y.loc[y["event"]]["duration"].median()
+y.loc[y["event"]]["duration"].median().round(1)
 
 # %%
 y_max_impute = y.copy()
 y_max_impute.loc[~y["event"], "duration"] = y_max_impute["duration"].max()
-y_max_impute["duration"].median()
+y_max_impute["duration"].median().round(1)
+
+# %% [markdown]
+# We can compare them to the mean of the ground-truth event time $T^*$, that we
+# would obtained with an infinite observation window.
+#
+# Note that we can access to the random variable $T^*$ because we generated
+# this synthetic dataset. With real-world data, you only have access to $T =
+# \min(T^*, C)$, where $C$ is a random variable representing the censoring
+# time.
 
 # %%
 file_url = DATA_URL + "truck_failure_10k_any_event_uncensored.parquet"
 y_uncensored = pd.read_parquet(fetch_file(file_url, folder="truck_dataset"))
-y_uncensored["duration"].median()
+y_uncensored["duration"].median().round(1)
+
+# %% [markdown]
+# We can see that either naive approach leads to a biased estimate of the
+# median time. The ground-truth median time to event lies between the two naive
+# estimates.
 
 # %% [markdown]
 #

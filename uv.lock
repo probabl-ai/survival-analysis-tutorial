@@ -2484,6 +2484,25 @@ wheels = [
 ]
 
 [[package]]
+name = "skrub"
+version = "0.5.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jinja2" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pandas" },
+    { name = "requests" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b4/a1/8d5a0db7200525426829c1a39f77bd07a17ced7b998bf43cc0f7e555a85a/skrub-0.5.3.tar.gz", hash = "sha256:a0680a1d303d51378a13b5dfe9948e561f7a096a60ecfe3d73c3cfcf8cf6c1e4", size = 6525425 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/80/cf/5a1e0dabfa3cad1ab9b09e690fede4aa8fdc0c04d9d7ec8aa9338d56e1e4/skrub-0.5.3-py3-none-any.whl", hash = "sha256:b6ba417fa83d1f7e9a69656e0860b061381b9bd19808692a2b5bef8588c72775", size = 339972 },
+]
+
+[[package]]
 name = "sniffio"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2653,6 +2672,7 @@ dependencies = [
     { name = "jupyterlab" },
     { name = "jupytext" },
     { name = "scikit-survival" },
+    { name = "skrub" },
 ]
 
 [package.metadata]
@@ -2662,6 +2682,7 @@ requires-dist = [
     { name = "jupyterlab", specifier = ">=4.4.2" },
     { name = "jupytext", specifier = ">=1.17.1" },
     { name = "scikit-survival", specifier = ">=0.24.1" },
+    { name = "skrub", specifier = ">=0.5.3" },
 ]
 
 [[package]]

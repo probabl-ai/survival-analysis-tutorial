@@ -69,10 +69,11 @@ import numpy as np
 from sklearn.utils import check_random_state
 from matplotlib import pyplot as plt
 import seaborn as sns
+
 sns.set_style("darkgrid")
 
 # %% [markdown]
-# 
+#
 # We consider 10,000 pairs (driver, truck) with constant features. The period
 # span on 10 years.
 
@@ -177,6 +178,7 @@ trucks
 # We can easily augment our truck driver pairs with those extra metadata by
 # using a join:
 
+
 # %%
 def sample_driver_truck_pairs_with_metadata(n_datapoints, random_seed):
     return (
@@ -208,6 +210,7 @@ sample_driver_truck_pairs_with_metadata(10, random_seed=0)
 # - k > 1: "aging" process, wear and tear... monotonically increasing hazards.
 #
 # The hazard function can be implemented as:
+
 
 # %%
 def weibull_hazard(t, k=1.0, s=1.0, t_shift=100, base_rate=1e2):
@@ -590,35 +593,33 @@ truck_failure_10k
 # data has been sampled:
 
 # %%
-from sksurv.nonparametric import kaplan_meier_estimator
-from scipy.interpolate import interp1d
+from lifelines import KaplanMeierFitter
 
 
-def plot_survival_function(event_frame, all_hazards):
+# %%
+
+
+def plot_survival_function(event_frame, all_hazards, X_is_fixed=False):
     assert all_hazards.shape[0] == event_frame.query("event != 0")["event"].nunique()
     assert all_hazards.shape[1] == event_frame.shape[0]  # observations
     assert all_hazards.shape[2] >= event_frame["duration"].max()  # days
 
     any_event = event_frame["event"] > 0
-    km_times, km_surv_probs = kaplan_meier_estimator(any_event, event_frame["duration"])
+    km = KaplanMeierFitter()
+    km.fit(
+        durations=event_frame["duration"],
+        event_observed=any_event,
+    )
+    ax = km.plot_survival_function(label=r"KM estimator $\hat{S}(t)$")
 
     # Make it possible to evaluate the survival probabilities at any time step with
     # with constant extrapolation if necessary.
     times = np.arange(total_days)
-    surv_func = interp1d(
-        km_times,
-        km_surv_probs,
-        kind="previous",
-        bounds_error=False,
-        fill_value="extrapolate",
-    )
-    surv_probs = surv_func(times)
-
     any_event_hazards = all_hazards.sum(axis=0)
     true_surv = np.exp(-any_event_hazards.cumsum(axis=-1))
 
-    plt.step(times, surv_probs, label=r"KM estimator $\hat{S}(t)$")
-    plt.step(times, true_surv.mean(axis=0), label=r"True $E_{x_i \in X} [S(t; x_i)]$")
+    label = r"True $S(t; X=x_i)$" if X_is_fixed else r"True $E_{X} [S(t; X)]$"
+    ax.step(times, true_surv.mean(axis=0), label=label)
     plt.legend()
     plt.title("Survival functions")
 
@@ -638,7 +639,7 @@ from lifelines import AalenJohansenFitter
 
 
 def plot_cumulative_incidence_functions(
-    event_frame, all_hazards, calculate_variance=False
+    event_frame, all_hazards, calculate_variance=False, X_is_fixed=False
 ):
     # `calculate_variance` can be set to True to display confidence intervales
     # but it is slow.
@@ -657,7 +658,11 @@ def plot_cumulative_incidence_functions(
         ajf.plot(label=f"Aalen Johansen estimate of $CIF_{event_id}$", ax=ax)
 
         cif = (hazards_i * true_surv).cumsum(axis=-1).mean(axis=0)
-        ax.plot(cif, label=r"True $E_{x_i \in X}" + f"[CIF_{event_id}(t; x_i)]$"),
+        if X_is_fixed:
+            label = f"True $CIF_{event_id}(t; X=x_i)$"
+        else:
+            label = f"True $E_X[CIF_{event_id}(t; X)]$"
+        ax.plot(cif, label=label),
         ax.set(ylim=[-0.01, 1.01]),
         ax.legend()
 
@@ -836,11 +841,11 @@ for seed in [40, 41, 42]:
     ) = sample_competing_events(truck_failure_fc, random_seed=42)
     # plot_stacked_occurrences(truck_failure_fc_events)
     _ = plt.figure(figsize=(12, 4))
-    plot_survival_function(truck_failure_fc_events, all_hazards_fc)
+    plot_survival_function(truck_failure_fc_events, all_hazards_fc, X_is_fixed=True)
 
     _ = plt.figure(figsize=(12, 4))
     plot_cumulative_incidence_functions(
-        truck_failure_fc_events, all_hazards_fc, calculate_variance=True
+        truck_failure_fc_events, all_hazards_fc, calculate_variance=True, X_is_fixed=True
     )
 
 # %% [markdown]

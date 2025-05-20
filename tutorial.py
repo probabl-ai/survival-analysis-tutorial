@@ -121,6 +121,12 @@ X, y = make_synthetic_competing_weibull(
 )
 y.head()
 
+# %%
+import pandas as pd
+
+y = pd.read_parquet("truck_dataset/truck_failure_10k_any_event.parquet")
+y.head()
+
 # %% [markdown]
 #
 # ### 1.4 Why is it a problem to train time-to-event regression models?
@@ -143,21 +149,16 @@ y.head()
 # where $C$ is a random variable representing the censoring time.
 
 # %%
-event_mask = y["event"].astype(bool)
-y.loc[event_mask]["duration"].median()
+y.loc[y["event"]]["duration"].median()
 
 # %%
 y_max_impute = y.copy()
-y_max_impute.loc[~event_mask, "duration"] = y_max_impute["duration"].max()
+y_max_impute.loc[~y["event"], "duration"] = y_max_impute["duration"].max()
 y_max_impute["duration"].median()
 
 # %%
-_, y_uncensored = make_synthetic_competing_weibull(
-    n_events=1,
-    n_samples=50,
-    random_state=0,
-    return_X_y=True,
-    censoring_relative_scale=0,
+y_uncensored = pd.read_parquet(
+    "truck_dataset/truck_failure_10k_any_event_uncensored.parquet"
 )
 y_uncensored["duration"].median()
 
@@ -237,6 +238,7 @@ ax.legend();
 # associated to the events and durations.
 
 # %%
+X = pd.read_parquet("truck_dataset/truck_failure_10k_features.parquet")
 X.head()
 
 # %% [markdown]

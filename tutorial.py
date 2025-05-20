@@ -114,12 +114,12 @@
 # Here is how we represent our target:
 
 # %%
-from hazardous.data import make_synthetic_competing_weibull
+from sklearn.datasets import fetch_file
+import pandas as pd
 
-X, y = make_synthetic_competing_weibull(
-    n_events=1, n_samples=50, random_state=0, return_X_y=True
-)
-y.head()
+DATA_URL = "https://github.com/probabl-ai/survival-analysis-tutorial/releases/download/data-2025-05-19/truck_failure_10k_any_event.parquet"
+y = pd.read_parquet(fetch_file(DATA_URL, folder="truck_dataset"))
+y
 
 # %% [markdown]
 #
@@ -222,7 +222,7 @@ ax.legend();
 # 
 # We can read the median time to event directly from this curve: it is the
 # time at the intersection of the estimate of the survival curve with the horizontal
-# line for a 50% failure probility.
+# line for a 50% failure probability.
 #
 # Since we have censored data, $\hat{S}(t)$ doesn't reach 0 within our observation
 # window. We would need to extend the observation window to estimate the survival

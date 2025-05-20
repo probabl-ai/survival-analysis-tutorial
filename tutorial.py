@@ -520,7 +520,22 @@ scorer("Survival Boost", y_train, y_test, y_pred_survboost, time_grid)
 # under the log-linear model for this simplistic dataset.
 
 # %%
+from sklearn.inspection import permutation_importance
+
+
+permutations = permutation_importance(surv_boost, X_test_trans, y_test)
+
+(
+    pd.Series(permutations["importances_mean"], index=X_test_trans.columns)
+    .sort_values(ascending=True)
+    .plot.barh(facecolor=mpl.color_sequences["tab10"])
+)
+# %%
 # TODO: PDP plot
+
+# from sklearn.inspection import PartialDependenceDisplay
+
+# PartialDependenceDisplay.from_estimator(surv_boost, X_test_trans, feature_names=)
 
 # %%
 plot_survival_curves(y_pred_survboost, time_grid)

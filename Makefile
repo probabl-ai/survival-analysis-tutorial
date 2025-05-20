@@ -1,12 +1,7 @@
-scripts := $(wildcard notebooks/*.py)
-notebooks := $(patsubst %.py,%.ipynb,$(scripts))
+.PHONY: clean notebooks
 
-.PHONY: all clean notebooks
-
-notebooks: $(notebooks)
-
-%.ipynb: %.py
-	jupytext $< --output $@ --execute --set-kernel sa_online_talk
+notebooks:
+	jupytext --to notebook --from py:percent tutorial.py --execute
 
 clean:
-	rm -f notebooks/*.ipynb
+	rm -f *.ipynb

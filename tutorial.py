@@ -531,7 +531,30 @@ permutations = permutation_importance(surv_boost, X_test_trans, y_test)
     .plot.barh(facecolor=mpl.color_sequences["tab10"])
 )
 # %%
-# TODO: PDP plot
+
+from sklearn.inspection import PartialDependenceDisplay
+
+t = np.random.uniform(
+    observed_times.min(), observed_times.max(), size=X_test_trans.shape[0]
+)
+X_test_trans.insert(0, "t", t)
+PartialDependenceDisplay.from_estimator(
+    surv_boost.estimator_,
+    X_test_trans.to_numpy(),
+    response_method="predict_proba",
+    method="brute",
+    features=["driver_skill", "usage_rate"],
+    feature_names=X_test_trans.columns,
+)
+# %%
+PartialDependenceDisplay.from_estimator(
+    surv_boost.estimator_,
+    X_test_trans.to_numpy(),
+    response_method="predict_proba",
+    method="brute",
+    features=[("driver_skill", "usage_rate")],
+    feature_names=X_test_trans.columns,
+)
 
 # from sklearn.inspection import PartialDependenceDisplay
 

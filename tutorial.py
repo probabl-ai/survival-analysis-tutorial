@@ -108,10 +108,13 @@
 # - The event indicator $\delta_i\in\{0, 1\}$, where $0$ marks censoring and $1$ is
 #   indicative that the event of interest has actually happened before reaching
 #   the end of the observation window.
-# - The censored time-to-event $d_i=\min(t_{i}, c_i) > 0$, that is the minimum between
-#   the date of the experienced event $t_i$ and the censoring date $c_i$. In a
-#   real-world setting, we don't have direct access to $t_i$ when $\delta_i=0$. We can
-#   only record $d_i$.
+# - The censored time-to-event $t_i=\min(t^*_{i}, c_i) > 0$, that is the
+#   minimum between the date of the hypothetical event $t^*_i$ and the censoring
+#   date $c_i$. In a real-world setting, we don't have direct access to $t^*_i$
+#   when $\delta_i=0$. We can only record $t_i$.
+#
+# We define the compound target $y_i = (t_i, \delta_i)$ as a tuple of the two
+# observables for each individual.
 #
 # Here is how we represent our target for a synthetic predictive maintenance
 # dataset of 10,000 observations collected by the operator of a fleet of

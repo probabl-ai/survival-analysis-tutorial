@@ -78,13 +78,17 @@
 #   window.
 # - $C \in \mathbb{R}_+$ is the censoring time
 #
-# We observe $(\bold{X},T,\Delta) \sim D$, where:
+# In summary, we can observe $(\bold{X},T,\Delta) \sim D$, where:
 # - $\bold{X} \sim \mathcal{X}$ are our covariates: information about the
 #   individuals at the time of making the prediction.
-# - $\Delta \in [0,1]$ is the event indicator, 0 is a censored observation.
+# - $T = \min(T^*, C)$ with $T \in \mathbb{R}_+$, the censored time-to-event.
+# - $\Delta = T^* < C$ with $ \Delta \in [0, 1]$, the event indicator, 0 is a
+#   censored observation.
 #
-# However, we are primarily interested in the distribution $(\bold{X}, T^*, \Delta) \sim
-# \mathcal{D}^*$, particularly the conditional distribution $T^*|\bold{X}$.
+# We sometimes assemble all the observable information related to the target as
+# the joint $Y = (T, \Delta)$.
+#
+# However, we are primarily interested in the conditional distribution $T^*|\bold{X}$.
 #
 # Our main quantities of interest to estimate are:
 #

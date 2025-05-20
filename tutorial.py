@@ -30,8 +30,8 @@
 # 
 # ### 1.1 Censoring
 #
-# Survival analysis is a time-to-event regression problem, with censored data. We call
-# censored all individuals that didn't experience the event during the range of the
+# Survival analysis is a **time-to-event regression** problem, with censored data. We
+# call censored all individuals that didn't experience the event during the range of the
 # observation window.
 #
 # In our setting, we're mostly interested in right-censored data, meaning we that the
@@ -50,16 +50,16 @@
 #
 # - In the **medical** landscape, events can consist in patients dying of cancer, or on
 #   the contrary recovering from some disease.
-# - In **predictive maintenance**, events can consist in machine failure.
+# - In **predictive maintenance**, events can consist in machine failures.
 # - In **insurance**, we are interesting in modeling the time to next claim for a
 #   portfolio of insurance contracts.
-# - In **marketing**, we can consider user churning as events, or we could focus on
+# - In **marketing**, we can consider a user churning as an event, or we could focus on
 #   users becoming premium (members that choose to pay a subscription after having used
-#   the free version of service for a while).
+#   the free version of a service for a while).
 #
 # Answering questions like:
-# - What is the probability that a new user churn in 6 months? 9 months?
-# - How long does it take for this churn probability to be 50%?
+# - What is the probability that a new user churn in 6 months? 1 year? 5 years?
+# - How long does it take for this user to churn with a probability of 50%?
 #
 # As we will see, for all those applications, it is not possible to directly train a
 # machine learning-based regression model on such a **right-censored** time-to-event
@@ -74,15 +74,17 @@
 # Some notations:
 #
 # We denote the observed time-to-event $T = \min(T^*, C)$, where: 
-# - $T^* \in \mathbb{R}_+$ is the event time
+# - $T^* \in \mathbb{R}_+$ is the event time for an hypothetical unlimited observation
+#   window.
 # - $C \in \mathbb{R}_+$ is the censoring time
 #
 # We observe $(\bold{X},T,\Delta) \sim D$, where:
-# - $\bold{X} \sim \mathcal{X}$ are our covariates
+# - $\bold{X} \sim \mathcal{X}$ are our covariates: information about the
+#   individuals at the time of making the prediction.
 # - $\Delta \in [0,1]$ is the event indicator, 0 is a censored observation.
 #
-#However, we are primarily interested in the distribution $(\bold{X}, T^*, \Delta) \sim
-#\mathcal{D}^*$, particularly the joint distribution $T^*, \Delta|\bold{X}$.
+# However, we are primarily interested in the distribution $(\bold{X}, T^*, \Delta) \sim
+# \mathcal{D}^*$, particularly the conditional distribution $T^*|\bold{X}$.
 #
 # Our main quantities of interest to estimate are:
 #
@@ -91,10 +93,10 @@
 #
 # $$S^*(t|\bold{x})=P(T^*>t|\bold{X=x})$$
 #
-# - **The Cumulative Incidence function** is the inverse of the survival function, and
+# - **The Cumulative Incidence Function** is the inverse of the survival function, and
 #   represents the probability that an event occur before some given time $t$:
 # 
-# $$F^*(t|\bold{x}) = 1 - S^*(t|\bold{x}) = P(T^*\leq t \cap \Delta=1|\bold{X=x})$$
+# $$F^*(t|\bold{x}) = 1 - S^*(t|\bold{x}) = P(T^*\leq t|\bold{X=x})$$
 
 # %% [markdown]
 #
@@ -104,14 +106,16 @@
 # two elements:
 #
 # - The event indicator $\delta_i\in\{0, 1\}$, where $0$ marks censoring and $1$ is
-#   indicative that the event of interest has actually happened before the end of the
-#   observation window.
+#   indicative that the event of interest has actually happened before reaching
+#   the end of the observation window.
 # - The censored time-to-event $d_i=\min(t_{i}, c_i) > 0$, that is the minimum between
 #   the date of the experienced event $t_i$ and the censoring date $c_i$. In a
 #   real-world setting, we don't have direct access to $t_i$ when $\delta_i=0$. We can
 #   only record $d_i$.
 #
-# Here is how we represent our target:
+# Here is how we represent our target for a synthetic predictive maintenance
+# dataset of 10,000 observations collected by the operator of a fleet of
+# trucks:
 
 # %%
 from sklearn.datasets import fetch_file
@@ -120,7 +124,7 @@ import pandas as pd
 DATA_URL = "https://github.com/probabl-ai/survival-analysis-tutorial/releases/download/data-2025-05-19/"
 file_url = DATA_URL + "truck_failure_10k_any_event.parquet"
 y = pd.read_parquet(fetch_file(file_url, folder="truck_dataset"))
-y
+y.round(1)
 
 # %% [markdown]
 #
@@ -135,26 +139,34 @@ y
 # **Both approaches are wrong and lead to biased results.**
 #
 # Let's compute the average and median time to event using either of those naive
-# approaches on our truck failure dataset. We will compare them to the mean of the
-# ground-truth event time $T$, that we would obtained with an infinite observation
-# window. 
-#
-# Note that we have access to the random variable $T$ because we generated this
-# synthetic dataset. With real-world data, you only have access to $Y = \min(T, C)$,
-# where $C$ is a random variable representing the censoring time.
+# approaches on our truck failure dataset:
 
 # %%
-y.loc[y["event"]]["duration"].median()
+y.loc[y["event"]]["duration"].median().round(1)
 
 # %%
 y_max_impute = y.copy()
 y_max_impute.loc[~y["event"], "duration"] = y_max_impute["duration"].max()
-y_max_impute["duration"].median()
+y_max_impute["duration"].median().round(1)
+
+# %% [markdown]
+# We can compare them to the mean of the ground-truth event time $T^*$, that we
+# would obtained with an infinite observation window.
+#
+# Note that we can access to the random variable $T^*$ because we generated
+# this synthetic dataset. With real-world data, you only have access to $T =
+# \min(T^*, C)$, where $C$ is a random variable representing the censoring
+# time.
 
 # %%
 file_url = DATA_URL + "truck_failure_10k_any_event_uncensored.parquet"
 y_uncensored = pd.read_parquet(fetch_file(file_url, folder="truck_dataset"))
-y_uncensored["duration"].median()
+y_uncensored["duration"].median().round(1)
+
+# %% [markdown]
+# We can see that either naive approach leads to a biased estimate of the
+# median time. The ground-truth median time to event lies between the two naive
+# estimates.
 
 # %% [markdown]
 #
@@ -219,7 +231,7 @@ ax.legend();
 # 
 # We can read the median time to event directly from this curve: it is the
 # time at the intersection of the estimate of the survival curve with the horizontal
-# line for a 50% failure probability.
+# line for a 50% probability of failure.
 #
 # Since we have censored data, $\hat{S}(t)$ doesn't reach 0 within our observation
 # window. We would need to extend the observation window to estimate the survival
@@ -341,8 +353,8 @@ class Scorer:
                 f" - C-index: {self.c_index[name]:.4f}"
             )
             ax.plot(time_grid, brier_score, label=label)
-        ax.set_ylabel("Brier scores")
-        ax.set_xlabel("Timeline")
+        ax.set_ylabel("Time-dependent Brier score")
+        ax.set_xlabel("Time horizon")
         ax.legend()
 
 scorer = Scorer()
@@ -353,7 +365,7 @@ scorer("Kaplan Meier", y_train, y_test, y_pred_km, time_grid)
 # We observed that the "prediction error" is largest for time horizons between 200 and
 # 1500 days after the beginning of the observation period.
 #
-# Additionnaly, we compute the Integrated Brier Score (IBS) which we will use to
+# Additionally, we compute the Integrated Brier Score (IBS) which we will use to
 # summarize the Brier score curve and compare the quality of different estimators of the
 # survival curve on the same test set: $$IBS = \frac{1}{t_{max} -
 # t_{min}}\int^{t_{max}}_{t_{min}} BS(t) dt$$
@@ -521,10 +533,9 @@ permutations = permutation_importance(surv_boost, X_test_trans, y_test)
 # %%
 # TODO: PDP plot
 
-from sklearn.inspection import PartialDependenceDisplay
+# from sklearn.inspection import PartialDependenceDisplay
 
-
-PartialDependenceDisplay.from_estimator(surv_boost, X_test_trans, feature_names=)
+# PartialDependenceDisplay.from_estimator(surv_boost, X_test_trans, feature_names=)
 
 # %%
 plot_survival_curves(y_pred_survboost, time_grid)

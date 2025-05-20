@@ -543,35 +543,38 @@ permutations = permutation_importance(surv_boost, X_test_trans, y_test)
 
 from sklearn.inspection import PartialDependenceDisplay
 
-t = np.full(shape=X_test_trans.shape[0], fill_value=np.quantile(observed_times, 0.25))
-X_test_trans_at_t = pd.concat(
-    [
-        pd.DataFrame(dict(t=t)),
-        X_test_trans.reset_index(drop=True),
-    ],
-    axis="columns",
-)
-PartialDependenceDisplay.from_estimator(
-    surv_boost.estimator_,
-    X_test_trans_at_t.to_numpy(),
-    response_method="predict_proba",
-    method="brute",
-    features=["driver_skill", "usage_rate"],
-    feature_names=X_test_trans_at_t.columns,
-)
-# %%
-PartialDependenceDisplay.from_estimator(
-    surv_boost.estimator_,
-    X_test_trans_at_t.to_numpy(),
-    response_method="predict_proba",
-    method="brute",
-    features=[("driver_skill", "usage_rate")],
-    feature_names=X_test_trans_at_t.columns,
-)
+for percentile in [0.25, 0.75]:
+    horizon = np.quantile(observed_times, percentile)
+    t = np.full(shape=X_test_trans.shape[0], fill_value=horizon)
+    X_test_trans_at_t = pd.concat(
+        [
+            pd.DataFrame(dict(t=t)),
+            X_test_trans.reset_index(drop=True),
+        ],
+        axis="columns",
+    )
+    plt.figure(figsize=(12, 6))
+    PartialDependenceDisplay.from_estimator(
+        surv_boost.estimator_,
+        X_test_trans_at_t.to_numpy(),
+        response_method="predict_proba",
+        method="brute",
+        features=["driver_skill", "usage_rate"],
+        feature_names=X_test_trans_at_t.columns,
+    )
+    _ = plt.suptitle(f"Marginal effects at t={horizon:.0f} days")
 
-# from sklearn.inspection import PartialDependenceDisplay
+    plt.figure(figsize=(8, 8))
+    PartialDependenceDisplay.from_estimator(
+        surv_boost.estimator_,
+        X_test_trans_at_t.to_numpy(),
+        response_method="predict_proba",
+        method="brute",
+        features=[("driver_skill", "usage_rate")],
+        feature_names=X_test_trans_at_t.columns,
+    )
+    _ = plt.suptitle(f"Interaction effects at t={horizon:.0f} days")
 
-# PartialDependenceDisplay.from_estimator(surv_boost, X_test_trans, feature_names=)
 
 # %%
 plot_survival_curves(y_pred_survboost, time_grid)

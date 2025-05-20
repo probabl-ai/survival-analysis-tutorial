@@ -8,4 +8,5 @@ dependencies = [
     "hazardous[doc]>=0.1.0",
     "jupyterlab>=4.4.2",
     "jupytext>=1.17.1",
+    "scikit-survival>=0.24.1",
 ]

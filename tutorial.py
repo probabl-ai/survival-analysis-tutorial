@@ -15,21 +15,20 @@
 #
 # 1. What is right-censored time-to-event data and why naive regression models fail on
 #    such data?
-# 2. Use-cases and limitations
-# 3. Modeling
-#    - Unconditional survival analysis with Kaplan Meier
-#    - Conditional survival analysis with Cox Proportional Hazards, a log-linear
+# 2. Modeling
+#    - 2.1 Unconditional survival analysis with Kaplan Meier
+#    - 2.2 Conditional survival analysis with Cox Proportional Hazards, a log-linear
 #      estimator
-#    - Conditional survival analysis and competing risk with SurvivalBoost, a non linear
-#      boosting tree method.
-#
+#    - 2.3 Conditional survival analysis and competing risk with SurvivalBoost, a non
+#      linear boosting tree method.
+# 3. Use-cases and limitations
 # ---
 #
 # %% [markdown]
 #
 # ## 1. What is right-censored time-to-event data?
 # 
-# ### Censoring
+# ### 1.1 Censoring
 #
 # Survival analysis is a time-to-event regression problem, with censored data. We call
 # censored all individuals that didn't experience the event during the range of the
@@ -70,7 +69,7 @@
 #
 # %% [markdown]
 #
-### Our Tasks
+### 1.2 Our Tasks
 #
 # Some notations:
 #
@@ -86,14 +85,20 @@
 #\mathcal{D}^*$, particularly the joint distribution $T^*, \Delta|\bold{X}$.
 #
 # Our main quantities of interest to estimate are:
-# - The Survival Function: $S^*(t|\bold{x})=P(T^*>t|\bold{X=x})$. This represents the
-#probability that an event doesn't occur at or before some given time $t$  - The
-#Cumulative Incidence function: $F^*(t|\bold{x}) = 1 - S^*(t|\bold{x}) = P(T^* \leq t
-#\cap \Delta=1|\bold{X=x})$
+#
+# - **The Survival Function** represents the probability that an event doesn't occur at
+#   or before some given time $t$:
+#
+# $$S^*(t|\bold{x})=P(T^*>t|\bold{X=x})$$
+#
+# - **The Cumulative Incidence function** is the inverse of the survival function, and
+#   represents the probability that an event occur before some given time $t$:
+# 
+# $$F^*(t|\bold{x}) = 1 - S^*(t|\bold{x}) = P(T^*\leq t \cap \Delta=1|\bold{X=x})$$
 
 # %% [markdown]
 #
-# ### Our target `y`
+# ### 1.3 Our target `y`
 #
 # For each individual $i\in[1, N]$, our survival analysis target $y_i$ is comprised of
 # two elements:
@@ -118,11 +123,11 @@ y.head()
 
 # %% [markdown]
 #
-# ### Why is it a problem to train time-to-event regression models?
+# ### 1.4 Why is it a problem to train time-to-event regression models?
 #
 # Without survival analysis, we have two naive options to deal with right-censored time
 # to event data:
-# - We ignore censorted data points from the dataset, only keep events that happened and
+# - We ignore censored data points from the dataset, only keep events that happened and
 #   perform naive regression on them.
 # - We consider that all censored events happen at the end of our observation window.
 #
@@ -158,9 +163,11 @@ y_uncensored["duration"].median()
 
 # %% [markdown]
 #
+# ## 2. Modeling 
+#
 # Let's start with unconditional estimation of the any event survival curve.
 #
-# ## Unconditional survival analysis with Kaplan-Meier
+# ### 2.1 Unconditional survival analysis with Kaplan-Meier
 #
 # We now introduce the survival analysis approach to the problem of estimating the
 # time-to-event from censored data. For now, we ignore any information from $X$ and
@@ -222,4 +229,18 @@ ax.legend();
 # function beyond this limit. **Kaplan-Meier does not attempt the extrapolate beyond the
 # last observed event**.
 
+# %% [markdown]
+#
+# ### 2.2 Kaplan Meier on Subgroup of `X`
+#
+# We can enrich our analysis by introducing covariates, that are statistically
+# associated to the events and durations.
 
+# %%
+X.head()
+
+# %% [markdown]
+# Let's stratify using the brand variable:
+
+# %%
+for brand, group, X.groupby():

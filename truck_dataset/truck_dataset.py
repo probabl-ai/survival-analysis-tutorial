@@ -590,9 +590,10 @@ truck_failure_10k
 # data has been sampled:
 
 # %%
-from sksurv.nonparametric import kaplan_meier_estimator
-from scipy.interpolate import interp1d
+from lifelines import KaplanMeierFitter
 
+
+# %%
 
 def plot_survival_function(event_frame, all_hazards):
     assert all_hazards.shape[0] == event_frame.query("event != 0")["event"].nunique()
@@ -600,25 +601,20 @@ def plot_survival_function(event_frame, all_hazards):
     assert all_hazards.shape[2] >= event_frame["duration"].max()  # days
 
     any_event = event_frame["event"] > 0
-    km_times, km_surv_probs = kaplan_meier_estimator(any_event, event_frame["duration"])
+    km = KaplanMeierFitter()
+    km.fit(
+        durations=event_frame["duration"],
+        event_observed=any_event,
+    )
+    ax = km.plot_survival_function(label=r"KM estimator $\hat{S}(t)$")
 
     # Make it possible to evaluate the survival probabilities at any time step with
     # with constant extrapolation if necessary.
     times = np.arange(total_days)
-    surv_func = interp1d(
-        km_times,
-        km_surv_probs,
-        kind="previous",
-        bounds_error=False,
-        fill_value="extrapolate",
-    )
-    surv_probs = surv_func(times)
-
     any_event_hazards = all_hazards.sum(axis=0)
     true_surv = np.exp(-any_event_hazards.cumsum(axis=-1))
 
-    plt.step(times, surv_probs, label=r"KM estimator $\hat{S}(t)$")
-    plt.step(times, true_surv.mean(axis=0), label=r"True $E_{x_i \in X} [S(t; x_i)]$")
+    ax.step(times, true_surv.mean(axis=0), label=r"True $E_{x_i \in X} [S(t; x_i)]$")
     plt.legend()
     plt.title("Survival functions")
 

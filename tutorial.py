@@ -231,7 +231,7 @@ ax.legend();
 # 
 # We can read the median time to event directly from this curve: it is the
 # time at the intersection of the estimate of the survival curve with the horizontal
-# line for a 50% failure probability.
+# line for a 50% probability of failure.
 #
 # Since we have censored data, $\hat{S}(t)$ doesn't reach 0 within our observation
 # window. We would need to extend the observation window to estimate the survival
@@ -353,8 +353,8 @@ class Scorer:
                 f" - C-index: {self.c_index[name]:.4f}"
             )
             ax.plot(time_grid, brier_score, label=label)
-        ax.set_ylabel("Brier scores")
-        ax.set_xlabel("Timeline")
+        ax.set_ylabel("Time-dependent Brier score")
+        ax.set_xlabel("Time horizon")
         ax.legend()
 
 scorer = Scorer()
@@ -365,7 +365,7 @@ scorer("Kaplan Meier", y_train, y_test, y_pred_km, time_grid)
 # We observed that the "prediction error" is largest for time horizons between 200 and
 # 1500 days after the beginning of the observation period.
 #
-# Additionnaly, we compute the Integrated Brier Score (IBS) which we will use to
+# Additionally, we compute the Integrated Brier Score (IBS) which we will use to
 # summarize the Brier score curve and compare the quality of different estimators of the
 # survival curve on the same test set: $$IBS = \frac{1}{t_{max} -
 # t_{min}}\int^{t_{max}}_{t_{min}} BS(t) dt$$

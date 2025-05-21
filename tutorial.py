@@ -27,7 +27,7 @@
 # %% [markdown]
 #
 # ## 1. What is right-censored time-to-event data?
-# 
+#
 # ### 1.1 Censoring
 #
 # Survival analysis is a **time-to-event regression** problem, with censored data. We
@@ -73,7 +73,7 @@
 #
 # Some notations:
 #
-# We denote the observed time-to-event $T = \min(T^*, C)$, where: 
+# We denote the observed time-to-event $T = \min(T^*, C)$, where:
 # - $T^* \in \mathbb{R}_+$ is the event time for an hypothetical unlimited observation
 #   window.
 # - $C \in \mathbb{R}_+$ is the censoring time
@@ -95,7 +95,7 @@
 #
 # - **The Cumulative Incidence Function** is the inverse of the survival function, and
 #   represents the probability that an event occur before some given time $t$:
-# 
+#
 # $$F^*(t|\bold{x}) = 1 - S^*(t|\bold{x}) = P(T^*\leq t|\bold{X=x})$$
 
 # %% [markdown]
@@ -108,10 +108,13 @@
 # - The event indicator $\delta_i\in\{0, 1\}$, where $0$ marks censoring and $1$ is
 #   indicative that the event of interest has actually happened before reaching
 #   the end of the observation window.
-# - The censored time-to-event $d_i=\min(t_{i}, c_i) > 0$, that is the minimum between
-#   the date of the experienced event $t_i$ and the censoring date $c_i$. In a
-#   real-world setting, we don't have direct access to $t_i$ when $\delta_i=0$. We can
-#   only record $d_i$.
+# - The censored time-to-event $t_i=\min(t^*_{i}, c_i) > 0$, that is the
+#   minimum between the date of the hypothetical event $t^*_i$ and the censoring
+#   date $c_i$. In a real-world setting, we don't have direct access to $t^*_i$
+#   when $\delta_i=0$. We can only record $t_i$.
+#
+# We define the compound target $y_i = (t_i, \delta_i)$ as a tuple of the two
+# observables for each individual.
 #
 # Here is how we represent our target for a synthetic predictive maintenance
 # dataset of 10,000 observations collected by the operator of a fleet of
@@ -170,7 +173,7 @@ y_uncensored["duration"].median().round(1)
 
 # %% [markdown]
 #
-# ## 2. Modeling 
+# ## 2. Modeling
 #
 # Let's start with unconditional estimation of the any event survival curve.
 #
@@ -182,7 +185,7 @@ y_uncensored["duration"].median().round(1)
 #
 # Here our quantity of interest is the survival probability:
 #
-# $$S(t)=P(T > t)$$ 
+# $$S(t)=P(T > t)$$
 #
 # This represents the probability that an event doesn't occur at or before some given
 # time $t$, i.e. that it happens at some time $T > t$.
@@ -225,10 +228,10 @@ km.fit(
 ax = km.plot_survival_function()
 ax.axhline(y=0.5, linestyle="--", color="r", label="median")
 ax.set_ylabel("Survival Probability")
-ax.set_ylim(0, 1);
-ax.legend();
+ax.set_ylim(0, 1)
+ax.legend()
 # %% [markdown]
-# 
+#
 # We can read the median time to event directly from this curve: it is the
 # time at the intersection of the estimate of the survival curve with the horizontal
 # line for a 50% probability of failure.
@@ -260,14 +263,15 @@ from matplotlib import pyplot as plt
 fig, ax = plt.subplots()
 for brand_name, group in df.groupby("brand"):
     (
-        KaplanMeierFitter().fit(
+        KaplanMeierFitter()
+        .fit(
             durations=group["duration"],
             event_observed=group["event"],
         )
         .plot_survival_function(ax=ax, label=brand_name)
     )
 ax.set_ylabel("Survival Probability")
-ax.set_ylim(0, 1);
+ax.set_ylim(0, 1)
 
 # %% [markdown]
 #
@@ -284,7 +288,7 @@ ax.set_ylim(0, 1);
 # Brier score if and only if it matches the true survival probabilities induced by the
 # underlying data generating process. In that respect the **Brier score** assesses both
 # the **calibration** and the **ranking power** of a survival probability estimator.
-# 
+#
 # It is comprised between 0 and 1 (lower is better). It answers the question "how close
 # to the real probabilities are our estimates?".
 #
@@ -325,7 +329,9 @@ y_pred_km.shape
 
 # %%
 from hazardous.metrics import (
-    concordance_index_incidence, brier_score_survival, integrated_brier_score_survival
+    concordance_index_incidence,
+    brier_score_survival,
+    integrated_brier_score_survival,
 )
 
 
@@ -339,13 +345,15 @@ class Scorer:
         self.brier_scores[model_name] = brier_score_survival(
             y_train, y_test, y_pred, time_grid
         )
-        self.ibs[model_name] = float(integrated_brier_score_survival(
-            y_train, y_test, y_pred, time_grid
-        ))
-        self.c_index[model_name] = float(concordance_index_incidence(
-            y_test, 1 - y_pred, y_train, time_grid=time_grid
-        ))
-        
+        self.ibs[model_name] = float(
+            integrated_brier_score_survival(y_train, y_test, y_pred, time_grid)
+        )
+        self.c_index[model_name] = float(
+            concordance_index_incidence(
+                y_test, 1 - y_pred, y_train, time_grid=time_grid
+            )
+        )
+
         _, ax = plt.subplots()
         for name, brier_score in self.brier_scores.items():
             label = (
@@ -356,6 +364,7 @@ class Scorer:
         ax.set_ylabel("Time-dependent Brier score")
         ax.set_xlabel("Time horizon")
         ax.legend()
+
 
 scorer = Scorer()
 scorer("Kaplan Meier", y_train, y_test, y_pred_km, time_grid)
@@ -429,12 +438,12 @@ y_pred_cox.shape
 scorer("Cox PH Fitter", y_train, y_test, y_pred_cox, time_grid)
 
 # %% [markdown]
-# 
+#
 # So the Cox Proportional Hazard model from lifelines fitted as a simple pipeline
 # with one-hot encoded categorical variables and raw numerical variables seems already
 # significantly better than our unconditional baseline.
 #
-# Let's now display the survival curves of the first 5 trucks-driver pairs. %%
+# Let's now display the survival curves of the first 5 trucks-driver pairs.
 
 # %%
 def plot_survival_curves(y_pred, time_grid, n_curves=5):
@@ -444,8 +453,8 @@ def plot_survival_curves(y_pred, time_grid, n_curves=5):
     ax.set_ylim(0, 1)
     ax.set_ylabel("S(t)")
     ax.set_title(r"Survival Probabilities $\hat{S}(t)$ of Cox PH")
-    ax.axhline(y=0.5, linestyle="--", color="r", alpha=.5)
-    ax.axvline(x=1000, linestyle="--", color="b", alpha=.5)
+    ax.axhline(y=0.5, linestyle="--", color="r", alpha=0.5)
+    ax.axvline(x=1000, linestyle="--", color="b", alpha=0.5)
     ax.legend()
     ax.grid()
 
@@ -480,10 +489,9 @@ plot_survival_curves(y_pred_cox, time_grid)
 import matplotlib as mpl
 
 (
-    np.log(
-        cox.hazard_ratios_.sort_values(ascending=False)
+    np.log(cox.hazard_ratios_.sort_values(ascending=False)).plot.barh(
+        facecolor=mpl.color_sequences["tab10"], grid=True
     )
-    .plot.barh(facecolor=mpl.color_sequences["tab10"], grid=True)
 )
 
 # %% [markdown]
@@ -515,7 +523,7 @@ y_pred_survboost = surv_boost.predict_survival_function(X_test_trans, time_grid)
 scorer("Survival Boost", y_train, y_test, y_pred_survboost, time_grid)
 
 # %% [markdown]
-# 
+#
 # SurvivalBoost gives great performance on the Brier Score, however C-index is slightly
 # under the log-linear model for this simplistic dataset.
 
@@ -556,9 +564,40 @@ PartialDependenceDisplay.from_estimator(
     feature_names=X_test_trans.columns,
 )
 
-# from sklearn.inspection import PartialDependenceDisplay
+from sklearn.inspection import PartialDependenceDisplay
 
-# PartialDependenceDisplay.from_estimator(surv_boost, X_test_trans, feature_names=)
+for percentile in [0.25, 0.75]:
+    horizon = np.quantile(observed_times, percentile)
+    t = np.full(shape=X_test_trans.shape[0], fill_value=horizon)
+    X_test_trans_at_t = pd.concat(
+        [
+            pd.DataFrame(dict(t=t)),
+            X_test_trans.reset_index(drop=True),
+        ],
+        axis="columns",
+    )
+    plt.figure(figsize=(12, 6))
+    PartialDependenceDisplay.from_estimator(
+        surv_boost.estimator_,
+        X_test_trans_at_t.to_numpy(),
+        response_method="predict_proba",
+        method="brute",
+        features=["driver_skill", "usage_rate"],
+        feature_names=X_test_trans_at_t.columns,
+    )
+    _ = plt.suptitle(f"Marginal effects at t={horizon:.0f} days")
+
+    plt.figure(figsize=(8, 8))
+    PartialDependenceDisplay.from_estimator(
+        surv_boost.estimator_,
+        X_test_trans_at_t.to_numpy(),
+        response_method="predict_proba",
+        method="brute",
+        features=[("driver_skill", "usage_rate")],
+        feature_names=X_test_trans_at_t.columns,
+    )
+    _ = plt.suptitle(f"Interaction effects at t={horizon:.0f} days")
+
 
 # %%
 plot_survival_curves(y_pred_survboost, time_grid)
@@ -566,4 +605,30 @@ plot_survival_curves(y_pred_survboost, time_grid)
 #
 # ## 3. Discussions and limits
 #
-# TODO
+# When to use it?
+#
+# Whenever you have censored data:
+# - Administrative censoring (present, end-of-study)
+# - censoring during study (user migration, patients move)
+#
+# <schema>
+#
+# - current limitation: time varying features. We're limited to features available
+# at the date of creation of the individual.
+#
+# <schema>
+#
+# - possible to preprocess the dataset to create features at some time steps and adapt
+# the target, but this is currently understudied.
+#
+# <schema>
+#
+# - In this situation, if you only have administrative censoring, it could be beneficial
+# and more simple to use a fixed horizon classification. Less informative, but easier
+# to evaluate and understand.
+#
+# <schema>
+#
+# - Survival analysis generally give you more context as its multi-horizon, and it
+#   might also help the learning process with a better modeling framework.
+#   

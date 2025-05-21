@@ -531,6 +531,17 @@ scorer("Survival Boost", y_train, y_test, y_pred_survboost, time_grid)
 #
 # SurvivalBoost gives great performance on the Brier Score, however C-index is slightly
 # under the log-linear model for this simplistic dataset.
+# %%
+plot_survival_curves(y_pred_survboost, time_grid)
+
+# %% [markdown]
+#
+# We also notice that curves are not subject to the proportional hazard constraint,
+# and can now cross each other.
+#
+# Since we use a scikit-learn estimator under the hood, Survival Boost is compatible
+# with scikit-learn machinery. Below we show how to determine global feature importance
+# via permutation importance, and analyse them via partial dependency plot.
 
 # %%
 from sklearn.inspection import permutation_importance
@@ -544,31 +555,6 @@ permutations = permutation_importance(surv_boost, X_test_trans, y_test)
     .plot.barh(facecolor=mpl.color_sequences["tab10"])
 )
 # %%
-
-from sklearn.inspection import PartialDependenceDisplay
-
-t = np.random.uniform(
-    observed_times.min(), observed_times.max(), size=X_test_trans.shape[0]
-)
-X_test_trans.insert(0, "t", t)
-PartialDependenceDisplay.from_estimator(
-    surv_boost.estimator_,
-    X_test_trans.to_numpy(),
-    response_method="predict_proba",
-    method="brute",
-    features=["driver_skill", "usage_rate"],
-    feature_names=X_test_trans.columns,
-)
-# %%
-PartialDependenceDisplay.from_estimator(
-    surv_boost.estimator_,
-    X_test_trans.to_numpy(),
-    response_method="predict_proba",
-    method="brute",
-    features=[("driver_skill", "usage_rate")],
-    feature_names=X_test_trans.columns,
-)
-
 from sklearn.inspection import PartialDependenceDisplay
 
 for percentile in [0.25, 0.75]:
@@ -604,36 +590,77 @@ for percentile in [0.25, 0.75]:
     _ = plt.suptitle(f"Interaction effects at t={horizon:.0f} days")
 
 
-# %%
-plot_survival_curves(y_pred_survboost, time_grid)
-# %% [markdown]
+# %% %% [markdown]
 #
-# ## 3. Discussions and limits
+# ## 3. Discussion and limits
 #
-# When to use it?
+# There are some tradeoff to consider when thinking about framing a survival analysis
+# problem.
 #
-# Whenever you have censored data:
-# - Administrative censoring (present, end-of-study)
-# - censoring during study (user migration, patients move)
+# ### When should you use survival analysis?
 #
-# <schema>
+# In general terms, it's beneficial to use survival analysis whenever you have
+# **right-censored data**. These can be of two types:
 #
-# - current limitation: time varying features. We're limited to features available
-# at the date of creation of the individual.
+# 1. Censoring during the study (in-study censoring)
+# 2. Censoring at the end of the study (administrative censoring)
 #
-# <schema>
+# <figure>
+# <img src="assets/censoring.png" style="width:80%">
+# <figcaption align = "center"> <i>image credit: scikit-survival</i> </figcaption>
+# </figure>
 #
-# - possible to preprocess the dataset to create features at some time steps and adapt
-# the target, but this is currently understudied.
+# - In healthcare, **in-study censoring** refers to patients we lost track of, (e.g.,
+#   they moved out of town). **Administrative censoring** refers to the end of the
+#   study.
+# - In churn analysis, **churned users** correspond to those who have experienced the
+#   event, while remaining users are those who have survived up to the present day.
+#   In-study censoring is harder to define; it could refer to users we lost track of
+#   during a database migration. Administrative censoring more naturally corresponds to
+#   the present date, with all active users having survived.
 #
-# <schema>
+# ### Survival analysis vs classification
 #
-# - In this situation, if you only have administrative censoring, it could be beneficial
-# and more simple to use a fixed horizon classification. Less informative, but easier
-# to evaluate and understand.
+# Today, the canonical approach to churn analysis is **classification at a fixed time
+# horizon**. In this setting, the task is to predict whether the event of interest will
+# happen during a fixed-window defined during training.
 #
-# <schema>
+# While simpler, this approach has some caveats:
+# - Classification can't handle in-study censoring (administrative censoring being
+# considered the target 0).
 #
-# - Survival analysis generally give you more context as its multi-horizon, and it
-#   might also help the learning process with a better modeling framework.
-#   
+# <TODO schema 1>
+#
+# - Classification can't handle multi-horizon natively. You'd have to retrain the model
+# and reassess its calibration for each horizon. Predicting multiple horizons also
+# provides more context and can help in decision making and uncertainty estimation.
+# 
+# <TODO schema 2>
+# 
+# ### Time-varying feature, a current implementation limitation
+#
+# Currently, time-varying features are a major limitation of survival analysis
+# implementations. While it is in practice possible by adapting the model training
+# scheme or by using preprocessing, it is not doable out-of-the box, and more research
+# on evaluation is necessary.
+#
+# Survival analysis therefore limit the study to features available at the beginning of
+# the study. In churn analysis, this would mean training models for specific milestones
+# like "acquiring a new user", or "this user became a premium user".
+#
+# <TODO schema 3>
+# <TODO schema 4>
+#
+# You can experiment with feature and target preprocessing by sampling a fixed number of
+# time of observation per individual, and compute the features available at that time,
+# and also adapt the target.
+#
+# <img src="assets/time_varying_features.png" style="width:100%">
+#
+# This raises the question about overfitting during the beginning of the study and
+# underfitting at the final stages, along with other evaluation challenges.
+#
+# In this situation, if you don't have in-study censoring, fixed-horizon classification
+# might be preferable.
+#
+# <TODO schema 6?>

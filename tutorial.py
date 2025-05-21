@@ -684,14 +684,11 @@ for percentile in [0.25, 0.75]:
 # While simpler, this approach has some caveats:
 # - Classification can't handle in-study censoring (administrative censoring being
 # considered the target 0).
-#
-# <TODO schema 1>
-#
 # - Classification can't handle multi-horizon natively. You'd have to retrain the model
 # and reassess its calibration for each horizon. Predicting multiple horizons also
 # provides more context and can help in decision making and uncertainty estimation.
 # 
-# <TODO schema 2>
+# <img src="assets/survival_vs_classification.png">
 # 
 # ### Time-varying feature, a current implementation limitation
 #

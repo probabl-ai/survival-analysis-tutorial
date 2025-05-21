@@ -648,7 +648,7 @@ for percentile in [0.25, 0.75]:
     _ = plt.suptitle(f"Interaction effects at t={horizon:.0f} days")
 
 
-# %% %% [markdown]
+# %% [markdown]
 #
 # ## 3. Discussion and limits
 #

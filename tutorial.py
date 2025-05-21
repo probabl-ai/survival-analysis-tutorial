@@ -448,8 +448,7 @@ scorer("Cox PH Fitter", y_train, y_test, y_pred_cox, time_grid)
 # with one-hot encoded categorical variables and raw numerical variables seems already
 # significantly better than our unconditional baseline.
 #
-# Let's now display the survival curves of the first 5 trucks-driver pairs. %%
-
+# Let's now display the survival curves of the first 5 trucks-driver pairs.
 
 # %%
 def plot_survival_curves(y_pred, time_grid, n_curves=5):
@@ -587,4 +586,30 @@ plot_survival_curves(y_pred_survboost, time_grid)
 #
 # ## 3. Discussions and limits
 #
-# TODO
+# When to use it?
+#
+# Whenever you have censored data:
+# - Administrative censoring (present, end-of-study)
+# - censoring during study (user migration, patients move)
+#
+# <schema>
+#
+# - current limitation: time varying features. We're limited to features available
+# at the date of creation of the individual.
+#
+# <schema>
+#
+# - possible to preprocess the dataset to create features at some time steps and adapt
+# the target, but this is currently understudied.
+#
+# <schema>
+#
+# - In this situation, if you only have administrative censoring, it could be beneficial
+# and more simple to use a fixed horizon classification. Less informative, but easier
+# to evaluate and understand.
+#
+# <schema>
+#
+# - Survival analysis generally give you more context as its multi-horizon, and it
+#   might also help the learning process with a better modeling framework.
+#   

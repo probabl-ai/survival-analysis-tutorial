@@ -652,10 +652,10 @@ for percentile in [0.25, 0.75]:
 #
 # ## 3. Discussion and limits
 #
-# There are some tradeoffs to consider when thinking about framing a survival analysis
-# problem.
+# There are some tradeoffs to consider when thinking about framing a survival
+# analysis problem.
 #
-# ### When should you use survival analysis?
+# ### Types of censoring
 #
 # Note that we can often distinguish between two types of censoring:
 #
@@ -676,11 +676,39 @@ for percentile in [0.25, 0.75]:
 #   present date, with all active users having survived. In-study censoring is
 #   not necessarily present in churn analysis.
 #
+# ### Competing risks vs censoring
+#
+# Note that some events can be **competing risks**. For instance, in a clinical
+# context, patients can die from different causes: cancer, cardiovascular
+# disease, road accidents, etc. In this case, we can model the time to event as
+# a **multiclass classification problem** with a different class for each
+# cause. If we are interested studying the effect of a drug on a particular
+# cause of death (e.g. cancer), it is important not to treat the other causes
+# of death as censored observations, since they increasing the observation
+# window would not make those deaths magically disappear.
+#
+# We therefore need specialized models and evaluation metrics to deal with
+# competing risks. The `hazardous` library provides built-in support for for
+# this setting in addition to the standard survival analysis methods (with
+# binary events).
+#
+# Telling which event is a competing risk and which one is a case of in-study
+# censoring is not always easy. For instance, an individual leaving the study
+# because they moved to another country is a case of in-study censoring. We had
+# the capacity to continue tracking them, we could still have observed the
+# event of interest (for instance, dying of cancer). However, in the churning
+# analysis setting, an individual unsubscribing from a service because they
+# moved to another country where the service is not available would better be
+# modeled as a competing risk to the event of interest (e.g. unsubscribing
+# because of loss of interest in the service). However, sometimes we don't know
+# the reason why an individual unsubscribed, and we have to collapse different
+# kinds of events together.
+#
 # ### Survival analysis vs classification
 #
 # In general terms, it's beneficial to use survival analysis methods whenever
-# you have a significant amount of **right-censored observations** with censoring times
-# lower than the maximum prediction horizon of interest.
+# you have a significant amount of **right-censored observations** with
+# censoring times lower than the maximum prediction horizon of interest.
 #
 # If your application of interest has a focus on a specific time horizon and
 # that this time horizon is short compared to the average observation window,
@@ -688,25 +716,26 @@ for percentile in [0.25, 0.75]:
 # time lower than that horizon is very small.
 # 
 # For instance, in a predictive maintenance setting for a datacenter, you might
-# be interested in the probability of failure of hard drives in a given node **in
-# the coming hour** to route traffic to a backup node and avoid disruption.
-# Assuming nodes operates on average for tens of thousands of hours before failure,
-# truncating the dataset to remove all the data points related to the operations of
-# nodes in the past hour (administrative censoring) would not be a problem. We
-# can treat this problem as a binary classification problem without any need for
-# correcting the bias introduced by the censoring, neigther for training nor for
-# evaluation.
+# be interested in the probability of failure of hard drives in a given node
+# **in the coming hour** to route traffic to a backup node and avoid
+# disruption. Assuming nodes operates on average for tens of thousands of hours
+# before failure, truncating the dataset to remove all the data points related
+# to the operations of nodes in the past hour (administrative censoring) would
+# not be a problem. We can treat this problem as a binary classification
+# problem without any need for correcting the bias introduced by the censoring,
+# neither for training nor for evaluation.
 #
-# Today, the canonical approach to churn analysis is **classification at a fixed time
-# horizon**. In this setting, the task is to predict whether the event of interest will
-# happen during a fixed-window defined during training.
+# Today, the canonical approach to churn analysis is **classification at a
+# fixed time horizon**. In this setting, the task is to predict whether the
+# event of interest will happen during a fixed-window defined during training.
 #
 # While simpler, this approach has some caveats:
-# - Classification can't handle in-study censoring (administrative censoring being
-# considered the target 0).
-# - Classification can't handle multi-horizon natively. You'd have to retrain the model
-# and reassess its calibration for each horizon. Predicting multiple horizons also
-# provides more context and can help in decision making and uncertainty estimation.
+# - Classification can't handle in-study censoring (administrative censoring
+# being considered the target 0).
+# - Classification can't handle multi-horizon natively. You'd have to retrain
+# the model and reassess its calibration for each horizon. Predicting multiple
+# horizons also provides more context and can help in decision making and
+# uncertainty estimation.
 # 
 # <img src="assets/survival_vs_classification.png">
 # 
@@ -729,7 +758,7 @@ for percentile in [0.25, 0.75]:
 #
 # A common way to deal with this is to use **landmarking**. This consists in
 # creating a new dataset (both for training and evaluation) with a fixed number
-# of time of observation per individual. For each individual and each landmark
+# of times of observation per individual. For each individual and each landmark
 # time, compute the features available at that landmark time, and also adapt to
 # measure the time-to-event (or censoring) relative to the landmark time. Then
 # proceed with the training and evaluation as usual.

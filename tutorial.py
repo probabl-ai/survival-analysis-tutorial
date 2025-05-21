@@ -320,7 +320,7 @@ ax.set_ylim(0, 1)
 # estimator.
 #
 # It is comprised between 0 and 1 (lower is better). It answers the question
-# "how close to the real probabilities are our estimates?".
+# "how close to the real probabilities are our predictions?".
 #
 # <figure>
 # <img src="assets/BrierScore.svg" style="width:80%">
@@ -333,17 +333,23 @@ ax.set_ylim(0, 1)
 # the survival function (i.e. the survival probability at any given time
 # horizon).
 #
+# The **IBS values** are comprised **between 0 and 1**, and **lower is better**.
+#
 # #### Concordance-Index (C-index)
 #
 # The **C-index** only assesses the **ranking power**: it is invariant to a monotonic
 # transform of the survival probabilities. It only focus on the ability of a predictive
 # survival model to identify which individual is likely to fail first out of any pair of
-# two individuals. It answers the question "given two individuals, how likely are we to
-# predict in the correct order that one has experienced the event before the other?"
+# two individuals.
 #
-# Conceptually, it is quite similar to the Kendall's Tau coefficient or the ROC AUC. It
-# is also comprised between 0 and 1, where 1 means perfect ranking and 0.5 is equivalent
-# to a random ranking.
+# It answers the question: "given two individuals, how likely are we to predict
+# in the correct order that one has experienced the event before the other?"
+#
+# Conceptually, it is quite similar to the Kendall's Tau coefficient or the ROC
+# AUC. **C-index values** are comprised **between 0 and 1** and **higher is
+# better**, where 1 means perfect ranking and 0.5 is equivalent to a random
+# ranking or constant ranking (irrespective of the information available in
+# $X$).
 #
 # Let's put this in practice. In the following, we use the KM estimated
 # survival for all individuals in the datasets, irrespective of the value of the
@@ -410,51 +416,60 @@ scorer("Kaplan Meier", y_train, y_test, y_pred_km, time_grid)
 
 # %% [markdown]
 #
-# We observed that the "prediction error" is largest for time horizons between 200 and
-# 1500 days after the beginning of the observation period.
+# We observe that the prediction quality of the KM estimate assessed by the
+# time-dependent Brier score is worst for time horizons between 200 and 1500
+# days after the beginning of the observation period.
 #
-# Additionally, we compute the Integrated Brier Score (IBS) which we will use to
-# summarize the Brier score curve and compare the quality of different estimators of the
-# survival curve on the same test set: $$IBS = \frac{1}{t_{max} -
-# t_{min}}\int^{t_{max}}_{t_{min}} BS(t) dt$$
+# Additionally, we compute the Integrated Brier Score (IBS) which we will use
+# to summarize the time-dependent Brier score curve and compare the quality of
+# different estimators of the survival curve on the same test set: $$IBS =
+# \frac{1}{t_{max} - t_{min}}\int^{t_{max}}_{t_{min}} BS(t) dt$$
 #
-# This is equivalent to a random prediction. Indeed, as our Kaplan Meier is a
-# unconditional estimator: it can't be used to rank individuals predictions as it
-# predicts the same survival curve for any row in `X_test`.
+# We also compute the C-index to assess the ranking power of our survival
+# probability estimator: here it is exactly 0.5, which means that the estimator
+# equivalent to a random prediction of which individuals are more likely to
+# experience the event first. Indeed, the Kaplan-Meier estimator is a
+# unconditional or marginal estimator: it can't be used to rank individuals
+# predictions as it predicts the same survival curve for any row in `X_test`.
 #
-# Next, we'll study how to fit survival models that make predictions conditional on `X`.
-#
+# In the following, we will see how to use the information in `X` to improve
+# upon this baseline by fitting conditional survival models.
+
+# %% [markdown]
 # ### 2.4 Cox Proportional Hazards
 #
-# The hazard rate $\lambda(t)$ represents the "speed of failure" or **the probability
-# that an event occurs in the next $dt$, given that it hasn't occured yet**. This can be
-# written as:
+# The hazard rate $\lambda(t)$ represents the "speed of failure" or **the
+# probability that an event occurs in the next $dt$, given that it hasn't
+# occurred yet**. This can be written as:
 #
-# $$\begin{align} \lambda(t) &=\lim_{dt\rightarrow 0}\frac{P(t \leq T < t + dt | P(T
+# $$\begin{align} \lambda(t) &=\lim_{dt\rightarrow 0}\frac{P(t \leq T < t + dt
+# | P(T
 # \geq t))}{dt} \\
 # &= \lim_{dt\rightarrow 0}\frac{P(t \leq T < t + dt)}{dtS(t)} \\
 # &= \frac{f(t)}{S(t)} \end{align} $$
 #
-# The Cox PH model is the most popular way of dealing with covariates $X$ in survival
-# analysis. It computes a log linear regression on the target $Y = \min(T, C)$, and
-# consists in a baseline term $\lambda_0(t)$ and a covariate term with weights $\beta$.
-# $$\lambda(t, x_i) = \lambda_0(t) \exp(x_i^\top \beta)$$
+# The Cox PH model is the most popular way of dealing with covariates $X$ in
+# survival analysis. It computes a log linear regression on the target $Y =
+# \min(T, C)$, and consists in a baseline term $\lambda_0(t)$ and a covariate
+# term with weights $\beta$. $$\lambda(t, x_i) = \lambda_0(t) \exp(x_i^\top
+# \beta)$$
 #
-# Note that only the baseline depends on the time $t$, but we can extend Cox PH to
-# time-dependent covariate $x_i(t)$ and time-dependent weigths $\beta(t)$. We won't
-# cover these extensions in this tutorial.
+# Note that only the baseline depends on the time $t$, but we can extend Cox PH
+# to time-dependent covariate $x_i(t)$ and time-dependent weights $\beta(t)$.
+# We won't cover these extensions in this tutorial.
 #
-# This methods is called ***proportional*** hazards, since for two different covariate
-# vectors $x_i$ and $x_j$, their ratio is: $$\frac{\lambda(t, x_i)}{\lambda(t, x_j)} =
-# \frac{\lambda_0(t) e^{x_i^\top \beta}}{\lambda_0(t) e^{x_j^\top
-# \beta}}=\frac{e^{x_i^\top \beta}}{e^{x_j^\top \beta}}$$
+# This methods is called ***proportional*** hazards, since for two different
+# covariate vectors $x_i$ and $x_j$, their ratio is: $$\frac{\lambda(t,
+# x_i)}{\lambda(t, x_j)} = \frac{\lambda_0(t) e^{x_i^\top \beta}}{\lambda_0(t)
+# e^{x_j^\top \beta}}=\frac{e^{x_i^\top \beta}}{e^{x_j^\top \beta}}$$
 #
-# This ratio is not dependent on time, and therefore the hazards are proportional.
+# This ratio is not dependent on time, and therefore the hazards are
+# proportional.
 #
-# Let's run it on our truck-driver dataset using the implementation of `lifelines`. This
-# models requires preprocessing of the categorical features using One-Hot encoding.
-# Let's use the scikit-learn column-transformer to combine the various components of the
-# model as a pipeline:
+# Let's run it on our truck-driver dataset using the implementation of
+# `lifelines`. This models requires preprocessing of the categorical features
+# using One-Hot encoding. Let's use the scikit-learn column-transformer to
+# combine the various components of the model as a pipeline:
 
 # %%
 from skrub import TableVectorizer

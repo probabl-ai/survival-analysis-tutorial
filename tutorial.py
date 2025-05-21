@@ -221,6 +221,9 @@ y_uncensored["duration"].median().round(1)
 # We can also be interested in estimating the survival probability after some
 # reference time $P(T^* > t_{ref})$, e.g. a random clinical trial estimating the
 # capacity of a drug to improve the survival probability after 6 months.
+#
+# Let's compute the Kaplan-Meier survival function on our truck failure
+# dataset:
 
 # %%
 from lifelines import KaplanMeierFitter
@@ -235,16 +238,36 @@ ax.axhline(y=0.5, linestyle="--", color="r", label="median")
 ax.set_ylabel("Survival Probability")
 ax.set_ylim(0, 1)
 ax.legend()
+
+# %% [markdown]
+# Since we have censored data, $\hat{S}(t)$ doesn't reach 0 within our
+# observation window. We would need to extend the observation window to
+# estimate the survival function beyond this limit. The **Kaplan-Meier
+# estimator does not attempt the extrapolate beyond the last observed event**.
+
 # %% [markdown]
 #
-# We can read the median time to event directly from this curve: it is the
-# time at the intersection of the estimate of the survival curve with the horizontal
+# We can read the median time to event directly from this curve: it is the time
+# at the intersection of the estimate of the survival curve with the horizontal
 # line for a 50% probability of failure.
 #
-# Since we have censored data, $\hat{S}(t)$ doesn't reach 0 within our observation
-# window. We would need to extend the observation window to estimate the survival
-# function beyond this limit. The **Kaplan-Meier estimator does not attempt the extrapolate beyond the
-# last observed event**.
+# Let's use the `scipy` library to compute this value by using interpolation to inverse
+# the survival function (from probability to time):
+
+# %%
+from scipy.interpolate import interp1d
+
+time_to_quantile_level = interp1d(
+    km.survival_function_["KM_estimate"], km.survival_function_.index
+)
+time_to_quantile_level(0.5).round(1)
+
+# %% [markdown]
+#
+# This empirically confirms that the median time to event estimated by the
+# Kaplan-Meier estimator applied to the censored observations is very close to
+# the ground-truth median time to event measured directly on the uncensored
+# synthetic data.
 
 # %% [markdown]
 #

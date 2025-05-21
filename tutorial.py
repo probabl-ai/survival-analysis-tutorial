@@ -592,12 +592,14 @@ plot_survival_curves(y_pred_survboost, time_grid)
 
 # %% [markdown]
 #
-# We also notice that curves are not subject to the proportional hazard constraint,
-# and can now cross each other.
+# We also notice that curves are **not** subject to the proportional hazards
+# constraint: contrary to the curves predicted by the previous Cox PH model,
+# the curves predicted by Survival Boost can cross each other.
 #
-# Since we use a scikit-learn estimator under the hood, Survival Boost is compatible
-# with scikit-learn machinery. Below we show how to determine global feature importance
-# via permutation importance, and analyse them via partial dependency plot.
+# Since we use a scikit-learn estimator under the hood, Survival Boost is
+# compatible with scikit-learn machinery. Below we show how to determine global
+# feature importance via permutation importance, and analyse them via partial
+# dependency plot.
 
 # %%
 from sklearn.inspection import permutation_importance

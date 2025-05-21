@@ -729,7 +729,9 @@ for percentile in [0.25, 0.75]:
 # average observation window and as a result, the fraction of censored data
 # points with a censoring time lower than that horizon is very large. In this
 # case, treating the problem as a binary classification problem would introduce
-# a large bias, both in training and evaluation.
+# a large bias, both in training and evaluation. For those cases, dedicated
+# survival analysis training and evaluation methods are necessary to avoid this
+# bias.
 # 
 # <img src="assets/survival_vs_classification.png">
 #

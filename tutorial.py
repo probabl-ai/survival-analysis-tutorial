@@ -442,15 +442,15 @@ scorer("Kaplan Meier", y_train, y_test, y_pred_km, time_grid)
 # probability that an event occurs in the next $dt$, given that it hasn't
 # occurred yet**. This can be written as:
 #
-# $$\begin{align} \lambda(t) &=\lim_{dt\rightarrow 0}\frac{P(t \leq T < t + dt
+# $$\begin{align} \lambda(t) &=\lim_{dt\rightarrow 0}\frac{P(t \leq T^* < t + dt
 # | P(T
 # \geq t))}{dt} \\
-# &= \lim_{dt\rightarrow 0}\frac{P(t \leq T < t + dt)}{dtS(t)} \\
+# &= \lim_{dt\rightarrow 0}\frac{P(t \leq T^* < t + dt)}{dtS(t)} \\
 # &= \frac{f(t)}{S(t)} \end{align} $$
 #
 # The Cox PH model is the most popular way of dealing with covariates $X$ in
-# survival analysis. It computes a log linear regression on the target $Y =
-# \min(T, C)$, and consists in a baseline term $\lambda_0(t)$ and a covariate
+# survival analysis. It computes a log linear regression on the target $T =
+# \min(T^*, C)$, and consists in a baseline term $\lambda_0(t)$ and a covariate
 # term with weights $\beta$. $$\lambda(t, x_i) = \lambda_0(t) \exp(x_i^\top
 # \beta)$$
 #
@@ -481,7 +481,9 @@ df_test = X_test.join(y_test)
 vectorizer = TableVectorizer()
 df_train = vectorizer.fit_transform(df_train)
 df_test = vectorizer.transform(df_test)
+df_train
 
+# %%
 cox = CoxPHFitter(penalizer=1e-2).fit(
     df_train, duration_col="duration", event_col="event"
 )
@@ -497,8 +499,8 @@ scorer("Cox PH Fitter", y_train, y_test, y_pred_cox, time_grid)
 # with one-hot encoded categorical variables and raw numerical variables seems already
 # significantly better than our unconditional baseline.
 #
-# Let's now display the survival curves of the first 5 trucks-driver pairs. %%
-
+# Let's now display the survival curves of the first 5 trucks-driver pairs of
+# the test set.
 
 # %%
 def plot_survival_curves(y_pred, time_grid, n_curves=5):
@@ -517,8 +519,8 @@ def plot_survival_curves(y_pred, time_grid, n_curves=5):
 plot_survival_curves(y_pred_cox, time_grid)
 # %% [markdown]
 #
-# We see that predicted survival functions can vary significantly for different test
-# samples.
+# We see that predicted survival functions can vary significantly for different
+# individuals in the test set.
 #
 # There are two ways to read this plot:
 #
@@ -537,17 +539,22 @@ plot_survival_curves(y_pred_cox, time_grid)
 # - test data point `#0` has less than a 20% chance to remain event-free at day 1000,
 # - test date point `#3` has around a 50% chance to remain event-free at day 1000...
 #
-# Let's try to get some intuition about the features importance from the first 5
-# truck-driver pairs and their survival probabilities.
+# Let's get some intuition about the features importance by inspecting the
+# coefficients of the Cox model:
 
 # %%
 import matplotlib as mpl
 
-(
-    np.log(cox.hazard_ratios_.sort_values(ascending=False)).plot.barh(
-        facecolor=mpl.color_sequences["tab10"], grid=True
-    )
+_ = np.log(cox.hazard_ratios_.sort_values(ascending=False)).plot.barh(
+    facecolor=mpl.color_sequences["tab10"], grid=True
 )
+
+# %% [markdown]
+#
+# We observe that the most important features are `usage_rate` and
+# `driver_skill`: the higher the usage rate, the higher the hazard of
+# experiencing an event. The higher the driver skill, the lower the hazard of
+# experiencing an event.
 
 # %% [markdown]
 #

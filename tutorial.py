@@ -221,6 +221,9 @@ y_uncensored["duration"].median().round(1)
 # We can also be interested in estimating the survival probability after some
 # reference time $P(T^* > t_{ref})$, e.g. a random clinical trial estimating the
 # capacity of a drug to improve the survival probability after 6 months.
+#
+# Let's compute the Kaplan-Meier survival function on our truck failure
+# dataset:
 
 # %%
 from lifelines import KaplanMeierFitter
@@ -235,16 +238,36 @@ ax.axhline(y=0.5, linestyle="--", color="r", label="median")
 ax.set_ylabel("Survival Probability")
 ax.set_ylim(0, 1)
 ax.legend()
+
+# %% [markdown]
+# Since we have censored data, $\hat{S}(t)$ doesn't reach 0 within our
+# observation window. We would need to extend the observation window to
+# estimate the survival function beyond this limit. The **Kaplan-Meier
+# estimator does not attempt the extrapolate beyond the last observed event**.
+
 # %% [markdown]
 #
-# We can read the median time to event directly from this curve: it is the
-# time at the intersection of the estimate of the survival curve with the horizontal
+# We can read the median time to event directly from this curve: it is the time
+# at the intersection of the estimate of the survival curve with the horizontal
 # line for a 50% probability of failure.
 #
-# Since we have censored data, $\hat{S}(t)$ doesn't reach 0 within our observation
-# window. We would need to extend the observation window to estimate the survival
-# function beyond this limit. The **Kaplan-Meier estimator does not attempt the extrapolate beyond the
-# last observed event**.
+# Let's use the `scipy` library to compute this value by using interpolation to inverse
+# the survival function (from probability to time):
+
+# %%
+from scipy.interpolate import interp1d
+
+time_to_quantile_level = interp1d(
+    km.survival_function_["KM_estimate"], km.survival_function_.index
+)
+time_to_quantile_level(0.5).round(1)
+
+# %% [markdown]
+#
+# This empirically confirms that the median time to event estimated by the
+# Kaplan-Meier estimator applied to the censored observations is very close to
+# the ground-truth median time to event measured directly on the uncensored
+# synthetic data.
 
 # %% [markdown]
 #
@@ -287,33 +310,50 @@ ax.set_ylim(0, 1)
 #
 # #### Integrated Brier Score (IBS)
 #
-# The **[Brier
+# The **[time-dependent Brier
 # score](https://soda-inria.github.io/hazardous/generated/hazardous.metrics.brier_score_survival.html)
-# is a proper scoring rule**, meaning that an estimate of the survival curve has minimal
-# Brier score if and only if it matches the true survival probabilities induced by the
-# underlying data generating process. In that respect the **Brier score** assesses both
-# the **calibration** and the **ranking power** of a survival probability estimator.
+# is a proper scoring rule**, meaning that an estimate of the survival
+# probability at a given time horizon has minimal Brier score if and only if it
+# matches the true survival probability induced by the underlying data
+# generating process. In that respect the **Brier score** assesses both the
+# **calibration** and the **ranking power** of a survival probability
+# estimator.
 #
-# It is comprised between 0 and 1 (lower is better). It answers the question "how close
-# to the real probabilities are our estimates?".
+# It is comprised between 0 and 1 (lower is better). It answers the question
+# "how close to the real probabilities are our predictions?".
 #
 # <figure>
 # <img src="assets/BrierScore.svg" style="width:80%">
 # </figure>
+#
+# The **[Integrated Brier
+# Score](https://soda-inria.github.io/hazardous/generated/hazardous.metrics.integrated_brier_score_survival.html)**
+# (IBS) is the average of the time-dependent Brier score over a time horizon
+# $[t_{min}, t_{max}]$. The IBS is a proper scoring rule for the estimation of
+# the survival function (i.e. the survival probability at any given time
+# horizon).
+#
+# The **IBS values** are comprised **between 0 and 1**, and **lower is better**.
 #
 # #### Concordance-Index (C-index)
 #
 # The **C-index** only assesses the **ranking power**: it is invariant to a monotonic
 # transform of the survival probabilities. It only focus on the ability of a predictive
 # survival model to identify which individual is likely to fail first out of any pair of
-# two individuals. It answers the question "given two individuals, how likely are we to
-# predict in the correct order that one has experienced the event before the other?"
+# two individuals.
 #
-# Conceptually, it is quite similar to the Kendall's Tau coefficient or the ROC AUC. It
-# is also comprised between 0 and 1, where 1 means perfect ranking and 0.5 is equivalent
-# to a random ranking.
+# It answers the question: "given two individuals, how likely are we to predict
+# in the correct order that one has experienced the event before the other?"
 #
-# Let's put this in practice.
+# Conceptually, it is quite similar to the Kendall's Tau coefficient or the ROC
+# AUC. **C-index values** are comprised **between 0 and 1** and **higher is
+# better**, where 1 means perfect ranking and 0.5 is equivalent to a random
+# ranking or constant ranking (irrespective of the information available in
+# $X$).
+#
+# Let's put this in practice. In the following, we use the KM estimated
+# survival for all individuals in the datasets, irrespective of the value of the
+# covariates $X$:
 # %%
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -351,12 +391,12 @@ class Scorer:
             y_train, y_test, y_pred, time_grid
         )
         self.ibs[model_name] = float(
-            integrated_brier_score_survival(y_train, y_test, y_pred, time_grid)
+            integrated_brier_score_survival(y_train, y_test, y_pred, time_grid).item()
         )
         self.c_index[model_name] = float(
             concordance_index_incidence(
                 y_test, 1 - y_pred, y_train, time_grid=time_grid
-            )
+            ).item()
         )
 
         _, ax = plt.subplots()
@@ -376,51 +416,60 @@ scorer("Kaplan Meier", y_train, y_test, y_pred_km, time_grid)
 
 # %% [markdown]
 #
-# We observed that the "prediction error" is largest for time horizons between 200 and
-# 1500 days after the beginning of the observation period.
+# We observe that the prediction quality of the KM estimate assessed by the
+# time-dependent Brier score is worst for time horizons between 200 and 1500
+# days after the beginning of the observation period.
 #
-# Additionally, we compute the Integrated Brier Score (IBS) which we will use to
-# summarize the Brier score curve and compare the quality of different estimators of the
-# survival curve on the same test set: $$IBS = \frac{1}{t_{max} -
-# t_{min}}\int^{t_{max}}_{t_{min}} BS(t) dt$$
+# Additionally, we compute the Integrated Brier Score (IBS) which we will use
+# to summarize the time-dependent Brier score curve and compare the quality of
+# different estimators of the survival curve on the same test set: $$IBS =
+# \frac{1}{t_{max} - t_{min}}\int^{t_{max}}_{t_{min}} BS(t) dt$$
 #
-# This is equivalent to a random prediction. Indeed, as our Kaplan Meier is a
-# unconditional estimator: it can't be used to rank individuals predictions as it
-# predicts the same survival curve for any row in `X_test`.
+# We also compute the C-index to assess the ranking power of our survival
+# probability estimator: here it is exactly 0.5, which means that the estimator
+# equivalent to a random prediction of which individuals are more likely to
+# experience the event first. Indeed, the Kaplan-Meier estimator is a
+# unconditional or marginal estimator: it can't be used to rank individuals
+# predictions as it predicts the same survival curve for any row in `X_test`.
 #
-# Next, we'll study how to fit survival models that make predictions conditional on `X`.
-#
+# In the following, we will see how to use the information in `X` to improve
+# upon this baseline by fitting conditional survival models.
+
+# %% [markdown]
 # ### 2.4 Cox Proportional Hazards
 #
-# The hazard rate $\lambda(t)$ represents the "speed of failure" or **the probability
-# that an event occurs in the next $dt$, given that it hasn't occured yet**. This can be
-# written as:
+# The hazard rate $\lambda(t)$ represents the "speed of failure" or **the
+# probability that an event occurs in the next $dt$, given that it hasn't
+# occurred yet**. This can be written as:
 #
-# $$\begin{align} \lambda(t) &=\lim_{dt\rightarrow 0}\frac{P(t \leq T < t + dt | P(T
+# $$\begin{align} \lambda(t) &=\lim_{dt\rightarrow 0}\frac{P(t \leq T^* < t + dt
+# | P(T
 # \geq t))}{dt} \\
-# &= \lim_{dt\rightarrow 0}\frac{P(t \leq T < t + dt)}{dtS(t)} \\
+# &= \lim_{dt\rightarrow 0}\frac{P(t \leq T^* < t + dt)}{dtS(t)} \\
 # &= \frac{f(t)}{S(t)} \end{align} $$
 #
-# The Cox PH model is the most popular way of dealing with covariates $X$ in survival
-# analysis. It computes a log linear regression on the target $Y = \min(T, C)$, and
-# consists in a baseline term $\lambda_0(t)$ and a covariate term with weights $\beta$.
-# $$\lambda(t, x_i) = \lambda_0(t) \exp(x_i^\top \beta)$$
+# The Cox PH model is the most popular way of dealing with covariates $X$ in
+# survival analysis. It computes a log linear regression on the target $T =
+# \min(T^*, C)$, and consists in a baseline term $\lambda_0(t)$ and a covariate
+# term with weights $\beta$. $$\lambda(t, x_i) = \lambda_0(t) \exp(x_i^\top
+# \beta)$$
 #
-# Note that only the baseline depends on the time $t$, but we can extend Cox PH to
-# time-dependent covariate $x_i(t)$ and time-dependent weigths $\beta(t)$. We won't
-# cover these extensions in this tutorial.
+# Note that only the baseline depends on the time $t$, but we can extend Cox PH
+# to time-dependent covariate $x_i(t)$ and time-dependent weights $\beta(t)$.
+# We won't cover these extensions in this tutorial.
 #
-# This methods is called ***proportional*** hazards, since for two different covariate
-# vectors $x_i$ and $x_j$, their ratio is: $$\frac{\lambda(t, x_i)}{\lambda(t, x_j)} =
-# \frac{\lambda_0(t) e^{x_i^\top \beta}}{\lambda_0(t) e^{x_j^\top
-# \beta}}=\frac{e^{x_i^\top \beta}}{e^{x_j^\top \beta}}$$
+# This methods is called ***proportional*** hazards, since for two different
+# covariate vectors $x_i$ and $x_j$, their ratio is: $$\frac{\lambda(t,
+# x_i)}{\lambda(t, x_j)} = \frac{\lambda_0(t) e^{x_i^\top \beta}}{\lambda_0(t)
+# e^{x_j^\top \beta}}=\frac{e^{x_i^\top \beta}}{e^{x_j^\top \beta}}$$
 #
-# This ratio is not dependent on time, and therefore the hazards are proportional.
+# This ratio is not dependent on time, and therefore the hazards are
+# proportional.
 #
-# Let's run it on our truck-driver dataset using the implementation of `lifelines`. This
-# models requires preprocessing of the categorical features using One-Hot encoding.
-# Let's use the scikit-learn column-transformer to combine the various components of the
-# model as a pipeline:
+# Let's run it on our truck-driver dataset using the implementation of
+# `lifelines`. This models requires preprocessing of the categorical features
+# using One-Hot encoding. Let's use the scikit-learn column-transformer to
+# combine the various components of the model as a pipeline:
 
 # %%
 from skrub import TableVectorizer
@@ -432,7 +481,9 @@ df_test = X_test.join(y_test)
 vectorizer = TableVectorizer()
 df_train = vectorizer.fit_transform(df_train)
 df_test = vectorizer.transform(df_test)
+df_train
 
+# %%
 cox = CoxPHFitter(penalizer=1e-2).fit(
     df_train, duration_col="duration", event_col="event"
 )
@@ -467,8 +518,8 @@ def plot_survival_curves(y_pred, time_grid, n_curves=5):
 plot_survival_curves(y_pred_cox, time_grid)
 # %% [markdown]
 #
-# We see that predicted survival functions can vary significantly for different test
-# samples.
+# We see that predicted survival functions can vary significantly for different
+# individuals in the test set.
 #
 # There are two ways to read this plot:
 #
@@ -487,17 +538,22 @@ plot_survival_curves(y_pred_cox, time_grid)
 # - test data point `#0` has less than a 20% chance to remain event-free at day 1000,
 # - test date point `#3` has around a 50% chance to remain event-free at day 1000...
 #
-# Let's try to get some intuition about the features importance from the first 5
-# truck-driver pairs and their survival probabilities.
+# Let's get some intuition about the features importance by inspecting the
+# coefficients of the Cox model:
 
 # %%
 import matplotlib as mpl
 
-(
-    np.log(cox.hazard_ratios_.sort_values(ascending=False)).plot.barh(
-        facecolor=mpl.color_sequences["tab10"], grid=True
-    )
+_ = np.log(cox.hazard_ratios_.sort_values(ascending=False)).plot.barh(
+    facecolor=mpl.color_sequences["tab10"], grid=True
 )
+
+# %% [markdown]
+#
+# We observe that the most important features are `usage_rate` and
+# `driver_skill`: the higher the usage rate, the higher the hazard of
+# experiencing an event. The higher the driver skill, the lower the hazard of
+# experiencing an event.
 
 # %% [markdown]
 #
@@ -506,12 +562,12 @@ import matplotlib as mpl
 # We now introduce a novel survival estimator named
 # [`SurvivalBoost`](https://soda-inria.github.io/hazardous/generated/hazardous.SurvivalBoost.html),
 # based on sklearn's
-# [`HistGradientBoostingClassifer`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html).
+# [`HistGradientBoostingClassifier`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html).
 # It can estimate cause-specific cumulative incidence functions in a competing risks
 # setting, by minimizing a cause specific proper scoring rule objective.
 #
-# We just published a paper detailing the Survival Boost model at the AISTATS 2025
-# conference.
+# We recently published a [paper](https://arxiv.org/abs/2410.16765) detailing
+# the Survival Boost model at the AISTATS 2025 conference.
 
 # %%
 from hazardous import SurvivalBoost
@@ -529,8 +585,8 @@ scorer("Survival Boost", y_train, y_test, y_pred_survboost, time_grid)
 
 # %% [markdown]
 #
-# SurvivalBoost gives great performance on the Brier Score, however C-index is slightly
-# under the log-linear model for this simplistic dataset.
+# SurvivalBoost gives great performance on the Brier Score, however C-index is
+# slightly under the log-linear model for this dataset.
 # %%
 plot_survival_curves(y_pred_survboost, time_grid)
 

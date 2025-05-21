@@ -592,12 +592,14 @@ plot_survival_curves(y_pred_survboost, time_grid)
 
 # %% [markdown]
 #
-# We also notice that curves are not subject to the proportional hazard constraint,
-# and can now cross each other.
+# We also notice that curves are **not** subject to the proportional hazards
+# constraint: contrary to the curves predicted by the previous Cox PH model,
+# the curves predicted by Survival Boost can cross each other.
 #
-# Since we use a scikit-learn estimator under the hood, Survival Boost is compatible
-# with scikit-learn machinery. Below we show how to determine global feature importance
-# via permutation importance, and analyse them via partial dependency plot.
+# Since we use a scikit-learn estimator under the hood, Survival Boost is
+# compatible with scikit-learn machinery. Below we show how to determine global
+# feature importance via permutation importance, and analyse them via partial
+# dependency plot.
 
 # %%
 from sklearn.inspection import permutation_importance
@@ -646,17 +648,16 @@ for percentile in [0.25, 0.75]:
     _ = plt.suptitle(f"Interaction effects at t={horizon:.0f} days")
 
 
-# %% %% [markdown]
+# %% [markdown]
 #
 # ## 3. Discussion and limits
 #
-# There are some tradeoff to consider when thinking about framing a survival analysis
-# problem.
+# There are some tradeoffs to consider when thinking about framing a survival
+# analysis problem.
 #
-# ### When should you use survival analysis?
+# ### Types of censoring
 #
-# In general terms, it's beneficial to use survival analysis whenever you have
-# **right-censored data**. These can be of two types:
+# Note that we can often distinguish between two types of censoring:
 #
 # 1. Censoring during the study (in-study censoring)
 # 2. Censoring at the end of the study (administrative censoring)
@@ -666,49 +667,105 @@ for percentile in [0.25, 0.75]:
 # <figcaption align = "center"> <i>image credit: scikit-survival</i> </figcaption>
 # </figure>
 #
-# - In healthcare, **in-study censoring** refers to patients we lost track of, (e.g.,
-#   they moved out of town). **Administrative censoring** refers to the end of the
-#   study.
-# - In churn analysis, **churned users** correspond to those who have experienced the
-#   event, while remaining users are those who have survived up to the present day.
-#   In-study censoring is harder to define; it could refer to users we lost track of
-#   during a database migration. Administrative censoring more naturally corresponds to
-#   the present date, with all active users having survived.
+# - In clinical studies, **in-study censoring** refers to patients we lost
+#   track of, (e.g., they moved out of town for a reason unrelated to the event
+#   of interest). **Administrative censoring** refers to the end of the study.
+# - In churn analysis, **churned users** correspond to those who have
+#   experienced the event, while remaining users are those who have survived up
+#   to the present day. Administrative censoring naturally corresponds to the
+#   present date, with all active users having survived. In-study censoring is
+#   not necessarily present in churn analysis.
+#
+# ### Competing risks vs censoring
+#
+# Note that some events can be **competing risks**. For instance, in a clinical
+# context, patients can die from different causes: cancer, cardiovascular
+# disease, road accidents, etc. In this case, we can model the time to event as
+# a **multiclass classification problem** with a different class for each
+# cause. If we are interested studying the effect of a drug on a particular
+# cause of death (e.g. cancer), it is important not to treat the other causes
+# of death as censored observations, since they increasing the observation
+# window would not make those deaths magically disappear.
+#
+# We therefore need specialized models and evaluation metrics to deal with
+# competing risks. The `hazardous` library provides built-in support for for
+# this setting in addition to the standard survival analysis methods (with
+# binary events).
+#
+# Telling which event is a competing risk and which one is a case of in-study
+# censoring is not always easy. For instance, an individual leaving the study
+# because they moved to another country is a case of in-study censoring. We had
+# the capacity to continue tracking them, we could still have observed the
+# event of interest (for instance, dying of cancer). However, in the churning
+# analysis setting, an individual unsubscribing from a service because they
+# moved to another country where the service is not available would better be
+# modeled as a competing risk to the event of interest (e.g. unsubscribing
+# because of loss of interest in the service). However, sometimes we don't know
+# the reason why an individual unsubscribed, and we have to collapse different
+# kinds of events together.
 #
 # ### Survival analysis vs classification
 #
-# Today, the canonical approach to churn analysis is **classification at a fixed time
-# horizon**. In this setting, the task is to predict whether the event of interest will
-# happen during a fixed-window defined during training.
+# In general terms, it's beneficial to use survival analysis methods whenever
+# you have a significant amount of **right-censored observations** with
+# censoring times lower than the maximum prediction horizon of interest.
+#
+# If your application of interest has a focus on a specific time horizon and
+# that this time horizon is short compared to the average observation window,
+# it is likely that that the fraction of censored data points with a censoring
+# time lower than that horizon is very small.
+# 
+# For instance, in a predictive maintenance setting for a datacenter, you might
+# be interested in the probability of failure of hard drives in a given node
+# **in the coming hour** to route traffic to a backup node and avoid
+# disruption. Assuming nodes operates on average for tens of thousands of hours
+# before failure, truncating the dataset to remove all the data points related
+# to the operations of nodes in the past hour (administrative censoring) would
+# not be a problem. We can treat this problem as a binary classification
+# problem without any need for correcting the bias introduced by the censoring,
+# neither for training nor for evaluation.
+#
+# Today, the canonical approach to churn analysis is **classification at a
+# fixed time horizon**. In this setting, the task is to predict whether the
+# event of interest will happen during a fixed-window defined during training.
 #
 # While simpler, this approach has some caveats:
-# - Classification can't handle in-study censoring (administrative censoring being
-# considered the target 0).
-# - Classification can't handle multi-horizon natively. You'd have to retrain the model
-# and reassess its calibration for each horizon. Predicting multiple horizons also
-# provides more context and can help in decision making and uncertainty estimation.
+# - Classification can't handle in-study censoring (administrative censoring
+# being considered the target 0).
+# - Classification can't handle multi-horizon natively. You'd have to retrain
+# the model and reassess its calibration for each horizon. Predicting multiple
+# horizons also provides more context and can help in decision making and
+# uncertainty estimation.
 # 
-# <img src="assets/survival_vs_classification.png" style="width:60%">
+# <img src="assets/survival_vs_classification.png">
 # 
-# ### Time-varying feature, a current implementation limitation
+# ### Dealing with time-varying features
 #
-# Currently, time-varying features are a major limitation of survival analysis
-# implementations. While it is in practice possible by adapting the model training
-# scheme or by using preprocessing, it is not doable out-of-the box, and more research
-# on evaluation is necessary.
+# The lack of support for time-varying features is a major limitation of the
+# survival analysis implementations presented in this tutorial. While it is
+# possible to such support by adapting the model training scheme or by using
+# preprocessing, it is not doable out-of-the box, and more research on
+# evaluation is necessary before including generic tools into the hazardous
+# library.
 #
-# Survival analysis therefore limit the study to features available at the beginning of
-# the study.
+# The methods presented in this tutorial limit only feature values available at
+# the beginning of the study. In the context of modeling time to accident for
+# an insurance company, this could be the information about the driver at the
+# beginning of the insurance contract for instance.
 #
-# You can experiment with feature and target preprocessing by sampling a fixed number of
-# time of observation per individual, and compute the features available at that time,
-# and also adapt the target.
+# However, in many applications, the features are time-varying and ignoring
+# more recent information can lead to severely degraded predictive performance.
+#
+# A common way to deal with this is to use **landmarking**. This consists in
+# creating a new dataset (both for training and evaluation) with a fixed number
+# of times of observation per individual. For each individual and each landmark
+# time, compute the features available at that landmark time, and also adapt to
+# measure the time-to-event (or censoring) relative to the landmark time. Then
+# proceed with the training and evaluation as usual.
 #
 # <img src="assets/time_varying_features.png" style="width:100%">
 #
-# This raises the question about overfitting during the beginning of the study and
-# underfitting at the final stages, along with other evaluation challenges.
-#
-# In this situation, if you don't have in-study censoring, fixed-horizon classification
-# might be preferable.
-#
+# This method raises the question about discrepancy between the training
+# distribution and the actual distribution at inference time.
+
+# %%

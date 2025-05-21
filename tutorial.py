@@ -183,20 +183,21 @@ y_uncensored["duration"].median().round(1)
 #
 # ### 2.1 Unconditional survival analysis with Kaplan-Meier
 #
-# We now introduce the survival analysis approach to the problem of estimating the
-# time-to-event from censored data. For now, we ignore any information from $X$ and
-# focus on $y$ only.
+# We now introduce the survival analysis approach to the problem of estimating
+# the time-to-event from censored data. For now, we ignore any information from
+# $X$ and focus on $y$ only.
 #
-# Here our quantity of interest is the survival probability:
+# Here our quantity of interest is the unconditional, or marginal, survival
+# probability:
 #
-# $$S(t)=P(T > t)$$
+# $$S(t)=P(T^* > t)$$
 #
-# This represents the probability that an event doesn't occur at or before some given
-# time $t$, i.e. that it happens at some time $T > t$.
+# This represents the probability that an event doesn't occur at or before some
+# given time $t$, i.e. that it happens at some time $T > t$.
 #
-# The most commonly used method to estimate this function is the **Kaplan-Meier**
-# estimator. It gives us an **unbiased estimate of the survival probability**. It can be
-# computed as follows:
+# The most commonly used method to estimate this function is the
+# **Kaplan-Meier** estimator. It gives us an **unbiased estimate of the
+# survival probability**. It can be computed as follows:
 #
 # $$\hat{S}(t)=\prod_{i: t_i\leq t} (1 - \frac{d_i}{n_i})$$
 #
@@ -206,20 +207,20 @@ y_uncensored["duration"].median().round(1)
 # - $d_i$ is the number of individuals having experienced the event at $t_i$,
 # - $n_i$ are the remaining individuals at risk at $t_i$.
 #
-# Note that **individuals that were censored before $t_i$ are no longer considered at
-# risk at $t_i$**.
+# Note that **individuals that were censored before $t_i$ are no longer
+# considered at risk at $t_i$**.
 #
-# Contrary to machine learning regressors, this estimator is **unconditional**: it only
-# extracts information from $y$ only, and cannot model information about each individual
-# typically provided in a feature matrix $X$.
+# Contrary to machine learning regressors, this estimator is **unconditional**:
+# it only extracts information from $y$ only, and cannot model information
+# about each individual typically provided in a feature matrix $X$.
 #
-# In a real-world application, we aim at estimating $\mathbb{E}[T]$ or $Q_{50\%}[T]$.
-# The latter quantity represents the median survival duration i.e. the duration before
-# 50% of our population at risk experiment the event.
+# In a real-world application, we aim at estimating $\mathbb{E}[T^*]$ or
+# $Q_{50\%}[T^*]$. The latter quantity represents the median survival duration
+# i.e. the duration before 50% of our population at risk experiment the event.
 #
-# We can also be interested in estimating the survival probability after some reference
-# time $P(T > t_{ref})$, e.g. a random clinical trial estimating the capacity of a drug
-# to improve the survival probability after 6 months.
+# We can also be interested in estimating the survival probability after some
+# reference time $P(T^* > t_{ref})$, e.g. a random clinical trial estimating the
+# capacity of a drug to improve the survival probability after 6 months.
 
 # %%
 from lifelines import KaplanMeierFitter
@@ -242,12 +243,12 @@ ax.legend()
 #
 # Since we have censored data, $\hat{S}(t)$ doesn't reach 0 within our observation
 # window. We would need to extend the observation window to estimate the survival
-# function beyond this limit. **Kaplan-Meier does not attempt the extrapolate beyond the
+# function beyond this limit. The **Kaplan-Meier estimator does not attempt the extrapolate beyond the
 # last observed event**.
 
 # %% [markdown]
 #
-# ### 2.2 Kaplan Meier on Subgroup of `X`
+# ### 2.2 Kaplan-Meier estimation on subgroups derived from `X`
 #
 # We can enrich our analysis by introducing covariates, that are statistically
 # associated to the events and durations.

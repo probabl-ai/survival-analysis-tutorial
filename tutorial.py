@@ -725,20 +725,14 @@ for percentile in [0.25, 0.75]:
 # problem without any need for correcting the bias introduced by the censoring,
 # neither for training nor for evaluation.
 #
-# Today, the canonical approach to churn analysis is **classification at a
-# fixed time horizon**. In this setting, the task is to predict whether the
-# event of interest will happen during a fixed-window defined during training.
-#
-# While simpler, this approach has some caveats:
-# - Classification can't handle in-study censoring (administrative censoring
-# being considered the target 0).
-# - Classification can't handle multi-horizon natively. You'd have to retrain
-# the model and reassess its calibration for each horizon. Predicting multiple
-# horizons also provides more context and can help in decision making and
-# uncertainty estimation.
+# In other cases, the time horizon of interest can be very long compared to the
+# average observation window and as a result, the fraction of censored data
+# points with a censoring time lower than that horizon is very large. In this
+# case, treating the problem as a binary classification problem would introduce
+# a large bias, both in training and evaluation.
 # 
 # <img src="assets/survival_vs_classification.png">
-# 
+#
 # ### Dealing with time-varying features
 #
 # The lack of support for time-varying features is a major limitation of the

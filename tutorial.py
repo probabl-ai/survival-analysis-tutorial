@@ -345,7 +345,9 @@ ax.set_ylim(0, 1)
 # is also comprised between 0 and 1, where 1 means perfect ranking and 0.5 is equivalent
 # to a random ranking.
 #
-# Let's put this in practice.
+# Let's put this in practice. In the following, we use the KM estimated
+# survival for all individuals in the datasets, irrespective of the value of the
+# covariates $X$:
 # %%
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -383,12 +385,12 @@ class Scorer:
             y_train, y_test, y_pred, time_grid
         )
         self.ibs[model_name] = float(
-            integrated_brier_score_survival(y_train, y_test, y_pred, time_grid)
+            integrated_brier_score_survival(y_train, y_test, y_pred, time_grid).item()
         )
         self.c_index[model_name] = float(
             concordance_index_incidence(
                 y_test, 1 - y_pred, y_train, time_grid=time_grid
-            )
+            ).item()
         )
 
         _, ax = plt.subplots()

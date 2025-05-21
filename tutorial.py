@@ -652,13 +652,12 @@ for percentile in [0.25, 0.75]:
 #
 # ## 3. Discussion and limits
 #
-# There are some tradeoff to consider when thinking about framing a survival analysis
+# There are some tradeoffs to consider when thinking about framing a survival analysis
 # problem.
 #
 # ### When should you use survival analysis?
 #
-# In general terms, it's beneficial to use survival analysis whenever you have
-# **right-censored data**. These can be of two types:
+# Note that we can often distinguish between two types of censoring:
 #
 # 1. Censoring during the study (in-study censoring)
 # 2. Censoring at the end of the study (administrative censoring)
@@ -668,16 +667,35 @@ for percentile in [0.25, 0.75]:
 # <figcaption align = "center"> <i>image credit: scikit-survival</i> </figcaption>
 # </figure>
 #
-# - In healthcare, **in-study censoring** refers to patients we lost track of, (e.g.,
-#   they moved out of town). **Administrative censoring** refers to the end of the
-#   study.
-# - In churn analysis, **churned users** correspond to those who have experienced the
-#   event, while remaining users are those who have survived up to the present day.
-#   In-study censoring is harder to define; it could refer to users we lost track of
-#   during a database migration. Administrative censoring more naturally corresponds to
-#   the present date, with all active users having survived.
+# - In clinical studies, **in-study censoring** refers to patients we lost
+#   track of, (e.g., they moved out of town for a reason unrelated to the event
+#   of interest). **Administrative censoring** refers to the end of the study.
+# - In churn analysis, **churned users** correspond to those who have
+#   experienced the event, while remaining users are those who have survived up
+#   to the present day. Administrative censoring naturally corresponds to the
+#   present date, with all active users having survived. In-study censoring is
+#   not necessarily present in churn analysis.
 #
 # ### Survival analysis vs classification
+#
+# In general terms, it's beneficial to use survival analysis methods whenever
+# you have a significant amount of **right-censored observations** with censoring times
+# lower than the maximum prediction horizon of interest.
+#
+# If your application of interest has a focus on a specific time horizon and
+# that this time horizon is short compared to the average observation window,
+# it is likely that that the fraction of censored data points with a censoring
+# time lower than that horizon is very small.
+# 
+# For instance, in a predictive maintenance setting for a datacenter, you might
+# be interested in the probability of failure of hard drives in a given node **in
+# the coming hour** to route traffic to a backup node and avoid disruption.
+# Assuming nodes operates on average for tens of thousands of hours before failure,
+# truncating the dataset to remove all the data points related to the operations of
+# nodes in the past hour (administrative censoring) would not be a problem. We
+# can treat this problem as a binary classification problem without any need for
+# correcting the bias introduced by the censoring, neigther for training nor for
+# evaluation.
 #
 # Today, the canonical approach to churn analysis is **classification at a fixed time
 # horizon**. In this setting, the task is to predict whether the event of interest will
@@ -692,30 +710,33 @@ for percentile in [0.25, 0.75]:
 # 
 # <img src="assets/survival_vs_classification.png">
 # 
-# ### Time-varying feature, a current implementation limitation
+# ### Dealing with time-varying features
 #
-# Currently, time-varying features are a major limitation of survival analysis
-# implementations. While it is in practice possible by adapting the model training
-# scheme or by using preprocessing, it is not doable out-of-the box, and more research
-# on evaluation is necessary.
+# The lack of support for time-varying features is a major limitation of the
+# survival analysis implementations presented in this tutorial. While it is
+# possible to such support by adapting the model training scheme or by using
+# preprocessing, it is not doable out-of-the box, and more research on
+# evaluation is necessary before including generic tools into the hazardous
+# library.
 #
-# Survival analysis therefore limit the study to features available at the beginning of
-# the study. In churn analysis, this would mean training models for specific milestones
-# like "acquiring a new user", or "this user became a premium user".
+# The methods presented in this tutorial limit only feature values available at
+# the beginning of the study. In the context of modeling time to accident for
+# an insurance company, this could be the information about the driver at the
+# beginning of the insurance contract for instance.
 #
-# <TODO schema 3>
-# <TODO schema 4>
+# However, in many applications, the features are time-varying and ignoring
+# more recent information can lead to severely degraded predictive performance.
 #
-# You can experiment with feature and target preprocessing by sampling a fixed number of
-# time of observation per individual, and compute the features available at that time,
-# and also adapt the target.
+# A common way to deal with this is to use **landmarking**. This consists in
+# creating a new dataset (both for training and evaluation) with a fixed number
+# of time of observation per individual. For each individual and each landmark
+# time, compute the features available at that landmark time, and also adapt to
+# measure the time-to-event (or censoring) relative to the landmark time. Then
+# proceed with the training and evaluation as usual.
 #
 # <img src="assets/time_varying_features.png" style="width:100%">
 #
-# This raises the question about overfitting during the beginning of the study and
-# underfitting at the final stages, along with other evaluation challenges.
-#
-# In this situation, if you don't have in-study censoring, fixed-horizon classification
-# might be preferable.
-#
-# <TODO schema 6?>
+# This method raises the question about discrepancy between the training
+# distribution and the actual distribution at inference time.
+
+# %%

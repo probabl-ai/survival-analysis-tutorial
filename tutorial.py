@@ -310,19 +310,28 @@ ax.set_ylim(0, 1)
 #
 # #### Integrated Brier Score (IBS)
 #
-# The **[Brier
+# The **[time-dependent Brier
 # score](https://soda-inria.github.io/hazardous/generated/hazardous.metrics.brier_score_survival.html)
-# is a proper scoring rule**, meaning that an estimate of the survival curve has minimal
-# Brier score if and only if it matches the true survival probabilities induced by the
-# underlying data generating process. In that respect the **Brier score** assesses both
-# the **calibration** and the **ranking power** of a survival probability estimator.
+# is a proper scoring rule**, meaning that an estimate of the survival
+# probability at a given time horizon has minimal Brier score if and only if it
+# matches the true survival probability induced by the underlying data
+# generating process. In that respect the **Brier score** assesses both the
+# **calibration** and the **ranking power** of a survival probability
+# estimator.
 #
-# It is comprised between 0 and 1 (lower is better). It answers the question "how close
-# to the real probabilities are our estimates?".
+# It is comprised between 0 and 1 (lower is better). It answers the question
+# "how close to the real probabilities are our estimates?".
 #
 # <figure>
 # <img src="assets/BrierScore.svg" style="width:80%">
 # </figure>
+#
+# The **[Integrated Brier
+# Score](https://soda-inria.github.io/hazardous/generated/hazardous.metrics.integrated_brier_score_survival.html)**
+# (IBS) is the average of the time-dependent Brier score over a time horizon
+# $[t_{min}, t_{max}]$. The IBS is a proper scoring rule for the estimation of
+# the survival function (i.e. the survival probability at any given time
+# horizon).
 #
 # #### Concordance-Index (C-index)
 #

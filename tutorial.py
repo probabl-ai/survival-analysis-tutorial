@@ -586,8 +586,8 @@ scorer("Survival Boost", y_train, y_test, y_pred_survboost, time_grid)
 
 # %% [markdown]
 #
-# SurvivalBoost gives great performance on the Brier Score, however C-index is slightly
-# under the log-linear model for this simplistic dataset.
+# SurvivalBoost gives great performance on the Brier Score, however C-index is
+# slightly under the log-linear model for this dataset.
 
 # %%
 from sklearn.inspection import permutation_importance

@@ -78,8 +78,8 @@
 #   window.
 # - $C \in \mathbb{R}_+$ is the censoring time
 #
-# In summary, we can observe $(\bold{X},T,\Delta) \sim D$, where:
-# - $\bold{X} \sim \mathcal{X}$ are our covariates: information about the
+# In summary, we can observe $(\mathbf{X},T,\Delta) \sim D$, where:
+# - $\mathbf{X} \sim \mathcal{X}$ are our covariates: information about the
 #   individuals at the time of making the prediction.
 # - $T = \min(T^*, C)$ with $T \in \mathbb{R}_+$, the censored time-to-event.
 # - $\Delta = T^* < C$ with $ \Delta \in [0, 1]$, the event indicator, 0 is a
@@ -88,19 +88,19 @@
 # We sometimes assemble all the observable information related to the target as
 # the joint $Y = (T, \Delta)$.
 #
-# However, we are primarily interested in the conditional distribution $T^*|\bold{X}$.
+# However, we are primarily interested in the conditional distribution $T^*|\mathbf{X}$.
 #
 # Our main quantities of interest to estimate are:
 #
 # - **The Survival Function** represents the probability that an event doesn't occur at
 #   or before some given time $t$:
 #
-# $$S^*(t|\bold{x})=P(T^*>t|\bold{X=x})$$
+# $$S^*(t|\mathbf{x})=P(T^*>t|\mathbf{X=x})$$
 #
 # - **The Cumulative Incidence Function** is the inverse of the survival function, and
 #   represents the probability that an event occur before some given time $t$:
 #
-# $$F^*(t|\bold{x}) = 1 - S^*(t|\bold{x}) = P(T^*\leq t|\bold{X=x})$$
+# $$F^*(t|\mathbf{x}) = 1 - S^*(t|\mathbf{x}) = P(T^*\leq t|\mathbf{X=x})$$
 
 # %% [markdown]
 #

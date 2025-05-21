@@ -563,12 +563,12 @@ _ = np.log(cox.hazard_ratios_.sort_values(ascending=False)).plot.barh(
 # We now introduce a novel survival estimator named
 # [`SurvivalBoost`](https://soda-inria.github.io/hazardous/generated/hazardous.SurvivalBoost.html),
 # based on sklearn's
-# [`HistGradientBoostingClassifer`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html).
+# [`HistGradientBoostingClassifier`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html).
 # It can estimate cause-specific cumulative incidence functions in a competing risks
 # setting, by minimizing a cause specific proper scoring rule objective.
 #
-# We just published a paper detailing the Survival Boost model at the AISTATS 2025
-# conference.
+# We recently published a [paper](https://arxiv.org/abs/2410.16765) detailing
+# the Survival Boost model at the AISTATS 2025 conference.
 
 # %%
 from hazardous import SurvivalBoost

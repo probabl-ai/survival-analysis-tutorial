@@ -755,9 +755,9 @@ for percentile in [0.25, 0.75]:
 # A common way to deal with this is to use **landmarking**. This consists in
 # creating a new dataset (both for training and evaluation) with a fixed number
 # of times of observation per individual. For each individual and each landmark
-# time, compute the features available at that landmark time, and also adapt to
-# measure the time-to-event (or censoring) relative to the landmark time. Then
-# proceed with the training and evaluation as usual.
+# time, compute the features available at that landmark time, and also adapt
+# the target to measure the time-to-event (or censoring) relative to the
+# landmark time. Then proceed with the training and evaluation as usual.
 #
 # <img src="assets/time_varying_features.png" style="width:100%">
 #

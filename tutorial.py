@@ -688,7 +688,7 @@ for percentile in [0.25, 0.75]:
 # and reassess its calibration for each horizon. Predicting multiple horizons also
 # provides more context and can help in decision making and uncertainty estimation.
 # 
-# <img src="assets/survival_vs_classification.png">
+# <img src="assets/survival_vs_classification.png" style="width:60%">
 # 
 # ### Time-varying feature, a current implementation limitation
 #
@@ -698,11 +698,7 @@ for percentile in [0.25, 0.75]:
 # on evaluation is necessary.
 #
 # Survival analysis therefore limit the study to features available at the beginning of
-# the study. In churn analysis, this would mean training models for specific milestones
-# like "acquiring a new user", or "this user became a premium user".
-#
-# <TODO schema 3>
-# <TODO schema 4>
+# the study.
 #
 # You can experiment with feature and target preprocessing by sampling a fixed number of
 # time of observation per individual, and compute the features available at that time,
@@ -716,4 +712,3 @@ for percentile in [0.25, 0.75]:
 # In this situation, if you don't have in-study censoring, fixed-horizon classification
 # might be preferable.
 #
-# <TODO schema 6?>
